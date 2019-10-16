@@ -31,7 +31,7 @@ export const RecipeForm = ({
       <textarea
         name="ingredientsList"
         type="text"
-        value=""
+        value={ingredientsList}
         id="ingredientsList"
         onChange={handleChange}
         rows="20"
@@ -41,7 +41,7 @@ export const RecipeForm = ({
       <textarea
         name="originalRecipe"
         type="text"
-        value=""
+        value={originalRecipe}
         id="originalRecipe"
         onChange={handleChange}
         rows="20"
