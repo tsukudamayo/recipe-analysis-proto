@@ -12,7 +12,9 @@ function App() {
   return (
     <div className="App">
       <div>こんにちは</div>
-      <RecipeForm />
+      <RecipeForm
+        originalRecipe="abcde"
+      />
       <RadarChartWrapper
         data={sampleData}
         recipename={sampleRecipeName}

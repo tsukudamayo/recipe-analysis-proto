@@ -25,7 +25,6 @@ describe('RecipeForm', () => {
     render(<RecipeForm />);
     expect(container.querySelector('form[id="recipe"]')).not.toBeNull();
   });
-
   it('has two submit button', () => {
     render(<RecipeForm />);
     const submitButton = container.querySelectorAll('input[type="submit"]');
@@ -33,6 +32,24 @@ describe('RecipeForm', () => {
     expect(submitButton).toHaveLength(2);
     expect(submitButton[0].value).toMatch('実行');
     expect(submitButton[1].value).toMatch('保存');
+  });
+  it('has div that renders post request', () => {
+    render(<RecipeForm />);
+    const postDiv = container.querySelector('div > div');
+    expect(postDiv).not.toBeNull();
+  });
+  it('renders a div to onChange value', async() => {
+    const originalRecipe = container.querySelector('textarea[id=originalRecipe]');
+    render(
+      <RecipeForm
+        originalRecipe="abcde"
+        onSubmit={(originalRecipe) => expect(originalRecipe).toEqual('abcde')}
+      />
+    );
+    await ReactTestUtils.Simulate.change(
+      field('originalRecipe'),
+      { target: { value: 'abcde' } },
+    );
   });
 
   const itRendersAsTextBox = (fieldName) => {
