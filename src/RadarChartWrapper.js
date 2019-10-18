@@ -15,8 +15,8 @@ export const RadarChartWrapper = ({ data, recipename }) => (
       <PolarAngleAxis dataKey="key" />
       <PolarRadiusAxis angle={90} domain={[0.0, 5.0]} tickCount={6} />
       <Radar
-        name={recipename['mean']}
-        dataKey="mean"
+        name={recipename['target']}
+        dataKey="target"
         stroke="#ff4500"
         fill="#ffbf7f"
         fillOpacity={0.6}
