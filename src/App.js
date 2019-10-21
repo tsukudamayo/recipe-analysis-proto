@@ -6,10 +6,9 @@ import { RecipeForm } from './RecipeForm';
 function App() {
   return (
     <div className="App">
-      <div>こんにちは</div>
-      <RecipeForm
-        originalRecipe="abcde"
-      />
+      <div className="recipeForm">
+        <RecipeForm />
+      </div>
     </div>
   );
 }

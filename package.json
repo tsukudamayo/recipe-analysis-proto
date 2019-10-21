@@ -6,6 +6,7 @@
     "axios": "^0.19.0",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",
+    "react-loader-spinner": "^3.1.4",
     "react-scripts": "3.2.0",
     "recharts": "^1.7.1"
   },

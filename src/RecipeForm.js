@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import Loader from 'react-loader-spinner';
 import axios from 'axios';
 
 import { RadarChartWrapper } from './RadarChartWrapper';
 import { BarChartWrapper } from './BarChartWrapper';
-import { sampleData } from './sampleData';
 import { sampleRecipeName } from './sampleRecipeName.js';
 
 import './RecipeForm.css'
@@ -17,6 +17,7 @@ export const RecipeForm = ({
   nerText,
   wakatiText,
   expectedTime,
+  loading,
   onSubmit
 }) => {
   const [recipe, setRecipe] = useState({
@@ -27,7 +28,8 @@ export const RecipeForm = ({
     recipeLevelData,
     nerText,
     wakatiText,
-    expectedTime
+    expectedTime,
+    loading
   });
 
   const handleChange = ({ target }) => {
@@ -40,7 +42,12 @@ export const RecipeForm = ({
 
   const postRecipe = () => {
     console.log('body : ', JSON.stringify({'data': recipe.originalRecipe}));
-    let data = recipe.originalRecipe
+    let data = recipe.originalRecipe;
+    setRecipe((recipe) => ({
+      ...recipe,
+      loading: true
+    }));
+    console.log('recipe.loading : ', recipe.loading);
     axios.post('http://localhost:5000/ner', {
       method: 'POST',
       data: data,
@@ -56,8 +63,10 @@ export const RecipeForm = ({
           ...recipe,
           nerText: text,
           wakatiText: wakati,
-          annotatedRecipe: colorAnnotate(text)
+          annotatedRecipe: colorAnnotate(text),
+          loading: false
         }));
+        console.log('recipe.loading : ', recipe.loading);
       });
 
     return ;
@@ -67,10 +76,10 @@ export const RecipeForm = ({
     let textToWakatiList = text.split(' ');
     console.log('textToWakatiList : ', textToWakatiList);
     let colorStringsList = textToWakatiList.map((strings) => {
-      if (strings.indexOf('/Ac') != -1) {
+      if (strings.indexOf('/Ac') !== -1) {
         return '<font color="orange">' + strings + '</font>';
       }
-      else if (strings.indexOf('/F') != -1) {
+      else if (strings.indexOf('/F') !== -1) {
         return '<font color="red">' + strings + '</font>';
       }
       else {
@@ -146,39 +155,59 @@ export const RecipeForm = ({
       <button onClick={fetchRecipeLevel}>レベル</button>
       <button onClick={verifyValue}>保存</button>
       <form id="recipe" onSubmit={() => onSubmit(recipe)}>
-        <br/>
-        <label htmlFor="ingredientsList">材料</label>
-        <textarea
-          name="ingredientsList"
-          type="text"
-          value={recipe.ingredientsList}
-          id="ingredientsList"
-          onChange={handleChange}
-          rows="20"
-          cols="50"
-        />
-        <label htmlFor="originalRecipe">作り方</label>
-        <textarea
-          name="originalRecipe"
-          type="text"
-          value={recipe.originalRecipe}
-          id="originalRecipe"
-          onChange={handleChange}
-          rows="20"
-          cols="50"
-        />
+        <div className="formTable">
+          <div className="recipeLabels">
+            <p><label htmlFor="ingredientsList">材料</label></p>
+            <textarea
+              name="ingredientsList"
+              type="text"
+              value={recipe.ingredientsList}
+              id="ingredientsList"
+              onChange={handleChange}
+              className="recipeForms"
+              rows="20"
+              cols="50"
+            />
+          </div>
+          <div className="recipeLabels">
+            <p><label htmlFor="originalRecipe">作り方</label></p>
+            <textarea
+              name="originalRecipe"
+              type="text"
+              value={recipe.originalRecipe}
+              id="originalRecipe"
+              onChange={handleChange}
+              className="recipeForms"
+              rows="20"
+              cols="50"
+            />
+          </div>
+        </div>
+
       </form>
-      <div
-        id="annotatedRecipe"
-        dangerouslySetInnerHTML={{__html: recipe.annotatedRecipe}}/>
-      <div>調理推定時間{recipe.expectedTime}分</div>
-      <RadarChartWrapper
-        data={recipe.recipeLevelData}
-        recipename={sampleRecipeName}
-      />
-      <BarChartWrapper
-        data={recipe.recipeTimeData}
-      />
+      <div className="resultRendering">
+        <div className="chartCell">
+          <div className="expectedTime">
+            調理推定時間<span className="numberOfTime">{recipe.expectedTime}</span>分
+          </div>
+          <BarChartWrapper
+            data={recipe.recipeTimeData}
+          />
+          <RadarChartWrapper
+            data={recipe.recipeLevelData}
+            recipename={sampleRecipeName}
+          />
+        </div>
+
+    
+        <div className="recipeForms">
+          {recipe.loading
+           ? <Loader type="Watch"/>
+           : <div id="annotatedRecipe" dangerouslySetInnerHTML={{__html: recipe.annotatedRecipe}}/>
+          }
+        </div>
+      </div>
+      
     </div>
   );
 };

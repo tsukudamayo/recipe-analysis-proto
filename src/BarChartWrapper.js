@@ -13,7 +13,7 @@ import {
 
 export const BarChartWrapper = ({ data }) => (
   <BarChart
-    width={1000}
+    width={500}
     height={500}
     data={data}
     margin={{top: 5, right: 30, left: 0, bottom: 5,}}

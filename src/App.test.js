@@ -8,9 +8,3 @@ it('renders without crashing', () => {
   ReactDOM.unmountComponentAtNode(div);
 });
 
-it('renders hello', () => {
-  const div = document.createElement('div');
-  ReactDOM.render(<App />, div);
-  expect(div.innerHTML).toContain('こんにちは');
-  ReactDOM.unmountComponentAtNode(div);
-});

@@ -27,11 +27,13 @@ describe('RecipeForm', () => {
   });
   it('has two submit button', () => {
     render(<RecipeForm />);
-    const submitButton = container.querySelectorAll('input[type="submit"]');
+    const submitButton = container.querySelectorAll('button');
     expect(submitButton).not.toBeNull();
-    expect(submitButton).toHaveLength(2);
-    expect(submitButton[0].value).toMatch('実行');
-    expect(submitButton[1].value).toMatch('保存');
+    expect(submitButton).toHaveLength(4);
+    expect(submitButton[0].textContent).toMatch('レシピ');
+    expect(submitButton[1].textContent).toMatch('時間');
+    expect(submitButton[2].textContent).toMatch('レベル');
+    expect(submitButton[3].textContent).toMatch('保存');
   });
   it('has div that renders post request', () => {
     render(<RecipeForm />);
