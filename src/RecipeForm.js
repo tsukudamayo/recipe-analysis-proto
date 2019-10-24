@@ -49,7 +49,7 @@ export const RecipeForm = ({
       loading: true
     }));
     console.log('recipe.loading : ', recipe.loading);
-    axios.post('http://192.168.99.100:5000/ner', {
+    axios.post('http://localhost:5000/ner', {
       method: 'POST',
       data: data,
       headers: {
@@ -99,7 +99,7 @@ export const RecipeForm = ({
 
   const fetchTimeData = () => {
     let data = recipe.nerText
-    axios.post('http://192.168.99.100:5000/time', {
+    axios.post('http://localhost:5000/time', {
       method: 'POST',
       data: data,
       headers: {
@@ -135,7 +135,7 @@ export const RecipeForm = ({
   const fetchRecipeLevel = () => {
     let data = recipe.ingredientsList;
     let wakati = recipe.wakatiText;
-    axios.post('http://192.168.99.100:5000/level', {
+    axios.post('http://localhost:5000/level', {
       method: 'POST',
       data: [data, wakati],
       headers: {
