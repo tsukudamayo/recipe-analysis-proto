@@ -49,7 +49,8 @@ export const RecipeForm = ({
       loading: true
     }));
     console.log('recipe.loading : ', recipe.loading);
-    axios.post('http://weekcook-datapotal.default.svc.cluster.local:5000/ner', {
+    // axios.post('https://sampleweekcookdatapotal.azurewebsites.net/ner', {
+    axios.post('http://localhost:5000/ner', {
       method: 'POST',
       data: data,
       headers: {
@@ -92,14 +93,19 @@ export const RecipeForm = ({
     });
     console.log('colorText : ', colorStringsList);
     let joinColoredText = colorStringsList.join(' ');
+    let lf = /\r?\n/g;
+    let br = '<br>';
+    let lfToBR = joinColoredText.replace(lf, br);
     console.log('joinColoredText : ', joinColoredText);
+    console.log('lfToBR : ', lfToBR);
 
-    return joinColoredText;
+    return lfToBR;
   };
 
   const fetchTimeData = () => {
     let data = recipe.nerText
-    axios.post('http://weekcook-datapotal.default.svc.cluster.local:5000/time', {
+    // axios.post('https://sampleweekcookdatapotal.azurewebsites.net/time', {
+    axios.post('http://localhost:5000/time', {
       method: 'POST',
       data: data,
       headers: {
@@ -135,7 +141,8 @@ export const RecipeForm = ({
   const fetchRecipeLevel = () => {
     let data = recipe.ingredientsList;
     let wakati = recipe.wakatiText;
-    axios.post('http://weekcook-datapotal.default.svc.cluster.local:5000/level', {
+    // axios.post('https://sampleweekcookdatapotal.azurewebsites.net/level', {
+    axios.post('http://localhost:5000/level', {
       method: 'POST',
       data: [data, wakati],
       headers: {
