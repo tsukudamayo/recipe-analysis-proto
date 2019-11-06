@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Loader from 'react-loader-spinner';
 import axios from 'axios';
@@ -8,6 +7,10 @@ import { BarChartWrapper } from './BarChartWrapper';
 import { sampleRecipeName } from './sampleRecipeName.js';
 
 import './RecipeForm.css'
+
+const POST_URL = 'http://localhost:5000'
+// const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net'
+// const POST_URL = 'http://23.100.108.226:5000'
 
 export const RecipeForm = ({
   ingredientsList,
@@ -49,8 +52,7 @@ export const RecipeForm = ({
       loading: true
     }));
     console.log('recipe.loading : ', recipe.loading);
-    // axios.post('https://sampleweekcookdatapotal.azurewebsites.net/ner', {
-    axios.post('http://23.100.108.226:5000/ner', {
+    axios.post(POST_URL + '/ner', {
       method: 'POST',
       data: data,
       headers: {
@@ -104,8 +106,7 @@ export const RecipeForm = ({
 
   const fetchTimeData = () => {
     let data = recipe.nerText
-    // axios.post('https://sampleweekcookdatapotal.azurewebsites.net/time', {
-    axios.post('http://23.100.108.226:5000/time', {
+    axios.post(POST_URL + ':5000/time', {
       method: 'POST',
       data: data,
       headers: {
@@ -141,8 +142,7 @@ export const RecipeForm = ({
   const fetchRecipeLevel = () => {
     let data = recipe.ingredientsList;
     let wakati = recipe.wakatiText;
-    // axios.post('https://sampleweekcookdatapotal.azurewebsites.net/level', {
-    axios.post('http://23.100.108.226:5000/level', {
+    axios.post(POST_URL + ':5000/level', {
       method: 'POST',
       data: [data, wakati],
       headers: {
