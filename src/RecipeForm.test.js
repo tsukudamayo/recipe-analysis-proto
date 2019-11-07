@@ -21,6 +21,10 @@ describe('RecipeForm', () => {
   const field = (name) => form('recipe').elements[name];
   const labelFor = (formElement) => container.querySelector(`label[for="${formElement}"]`);
 
+  const actionTimeParams = [
+    { 'action': '焼く', 'time': 2 }
+  ];
+
   it('renders a form', () => {
     render(<RecipeForm />);
     expect(container.querySelector('form[id="recipe"]')).not.toBeNull();
@@ -52,6 +56,15 @@ describe('RecipeForm', () => {
       field('originalRecipe'),
       { target: { value: 'abcde' } },
     );
+  });
+  it('renders actionTimeParams div', () => {
+    render(
+      <RecipeForm
+        actionTimeParams={actionTimeParams}
+      />
+    );
+    expect(container.querySelector('form[id="actionTimeParams"]')).not.toBeNull();
+    expect(container.querySelectorAll('option')[0].textContent).toEqual('焼く');
   });
 
   const itRendersAsTextBox = (fieldName) => {
