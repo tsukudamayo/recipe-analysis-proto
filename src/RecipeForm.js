@@ -8,9 +8,10 @@ import { sampleRecipeName } from './sampleRecipeName.js';
 
 import './RecipeForm.css'
 
-const POST_URL = 'http://localhost:5000'
-// const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net'
-// const POST_URL = 'http://23.100.108.226:5000'
+const POST_URL = 'http://localhost:5000';
+// const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net';
+// const POST_URL = 'http://23.100.108.226:5000';
+// const POST_URL = 'http://192.168.99.100:5000';
 
 export const RecipeForm = ({
   ingredientsList,
@@ -60,6 +61,14 @@ export const RecipeForm = ({
   };
 
   const parameterChange = ({ target }) => {
+    parameterHandler(target);
+    setRecipe((recipe) => ({
+      ...recipe,
+      [target.name]: target.value,
+    }));
+  };
+
+  const parameterHandler = (target) => {
     console.log('recipe.selectedAction : ', recipe.selectedAction);
     console.log('recipe.actionTimeParams : ', recipe.actionTimeParams);
     let filterByActionKey;
@@ -109,13 +118,14 @@ export const RecipeForm = ({
 
     setRecipe((recipe) => ({
       ...recipe,
-      [target.name]: target.value,
       recipeTimeData: newActionTimeInRecipe,
       actionTimeParams: newActionTimeParams,
       actionTime: summationActionTime,
       expectedTime: evaluationRecipeTime
     }));
-  };
+
+    return ;
+  }
 
   const postRecipe = () => {
     console.log('body : ', JSON.stringify({'data': recipe.originalRecipe}));
@@ -138,12 +148,11 @@ export const RecipeForm = ({
         console.log('recipe : ', recipe);
         const text = response.data['data'];
         const wakati = response.data['wakati'];
-        console.log('recipe : ', recipe);
         setRecipe((recipe) => ({
           ...recipe,
           nerText: text,
           wakatiText: wakati,
-          annotatedRecipe: colorAnnotate(text),
+          annotatedRecipe: generateColorAnnotation(text),
           loading: false
         }));
         console.log('recipe.loading : ', recipe.loading);
@@ -152,7 +161,7 @@ export const RecipeForm = ({
     return ;
   };
 
-  const colorAnnotate = (text) => {
+  const generateColorAnnotation = (text) => {
     let textToWakatiList = text.split(' ');
     console.log('textToWakatiList : ', textToWakatiList);
     let colorStringsList = textToWakatiList.map((strings) => {
@@ -180,12 +189,7 @@ export const RecipeForm = ({
   const fetchTimeData = () => {
     let data = recipe.nerText
     let time;
-    let actionTime;
-    let recipeTime;
     let actionCount;
-    let initTimeParams;
-    let filterByActionKey;
-    let computeActionTimeMap;
     axios.post(POST_URL + '/time', {
       method: 'POST',
       data: data,
@@ -202,85 +206,7 @@ export const RecipeForm = ({
         time = response.data['time'];
         actionTime = response.data['actiontime']
         recipeTime = response.data['recipetime']
-
-        const timeParams = () => {
-          let countData;
-          let timeData;
-          let targetIndex;
-          let computeTime;
-          if (recipe.actionTimeParams === undefined) {
-            console.log('undefined : ', response.data['params']);
-            computeActionTimeMap = actionCount.map((sourceitem, sourceindex) => {
-              filterByActionKey = response.data['params'].filter((dstitem, dstindex) => {
-                if (sourceitem['action'] === dstitem['action']) {
-                  return true;
-                }
-                else {
-                  return false;
-                }
-              });
-              console.log('sourceitem : ', sourceitem);
-              console.log('finlterByActionKey["0"] : ', filterByActionKey[0]);
-              if (filterByActionKey[0] === undefined) {
-                computeTime = 0;
-              }
-              else {
-                computeTime = sourceitem['count'] * filterByActionKey[0]['time'];
-              }
-              
-              return { 'action': sourceitem['action'], 'time': computeTime };
-            });
-
-            console.log('undefined filterByActionKey : ', filterByActionKey);
-            console.log('undefined computeActionTime : ', computeActionTimeMap);
-
-            setRecipe((recipe) => ({
-              ...recipe,
-              actionCount: actionCount,
-              actionTimeParams: response.data['params']
-            }));
-            
-            return computeActionTimeMap;
-          }
-          else {
-            console.log('not undefined : ', recipe.actionTimeParams);
-            computeActionTimeMap = actionCount.map((sourceitem, sourceindex) => {
-              filterByActionKey = recipe.actionTimeParams.filter((dstitem, dstindex) => {
-                if (sourceitem['action'] === dstitem['action']) {
-                  return true;
-                }
-                else {
-                  return false;
-                }
-              });
-              console.log('sourceitem : ', sourceitem);
-              console.log('finlterByActionKey["0"] : ', filterByActionKey[0]);
-              if (filterByActionKey[0] === undefined) {
-                computeTime = 0;
-              }
-              else {
-                computeTime = sourceitem['count'] * filterByActionKey[0]['time'];
-              }
-              
-              return { 'action': sourceitem['action'], 'time': computeTime };
-            });
-
-            console.log('undefined filterByActionKey : ', filterByActionKey);
-            console.log('undefined computeActionTime : ', computeActionTimeMap);
-            
-            return computeActionTimeMap;
-          }
-        };
-        console.log('timeParams : ', timeParams());
-        let dataMart = radarChartDataMart(timeParams());
-        setRecipe((recipe) => ({
-          ...recipe,
-          recipeTimeData: dataMart,
-          expectedTime: time,
-          actionTime: actionTime,
-          recipeTime: recipeTime,
-          actionTimeInRecipe: timeParams()
-        }));
+        dataMart(response, actionCount, time);
       });
 
     console.log('recipe.nerText : ', recipe.nerText);
@@ -288,13 +214,69 @@ export const RecipeForm = ({
     console.log('actionTimeParams : ', actionTimeParams);
   };
 
-  const radarChartDataMart = (data) => {
-    console.log('data:', data);
-    const dataMart = Object.keys(data).map((key) => {
-      return { action: data[key]['action'], time: data[key]['time'] };
+  const generateActionTimeMap = (src, dst) => {
+    let computeTime;
+    let computeActionTimeMap = src.map((sourceitem, sourceindex) => {
+      let filterByActionKey = dst.filter((dstitem, dstindex) => {
+        if (sourceitem['action'] === dstitem['action']) {
+          return true;
+        }
+        else {
+          return false;
+        }
+      });
+      console.log('sourceitem : ', sourceitem);
+      console.log('undefined filterByActionKey : ', filterByActionKey);
+      console.log('finlterByActionKey["0"] : ', filterByActionKey[0]);
+      if (filterByActionKey[0] === undefined) {
+        computeTime = 0;
+      }
+      else {
+        computeTime = sourceitem['count'] * filterByActionKey[0]['time'];
+      }
+      
+      return { 'action': sourceitem['action'], 'time': computeTime };
     });
-    console.log('dataMart : ', dataMart);
-    return dataMart;
+    return computeActionTimeMap;
+  }
+
+  const dataMart = (response, actionCount, time) => {
+    let computeActionTimeMap;
+    if (recipe.actionTimeParams === undefined) {
+      console.log('undefined : ', response.data['params']);
+      computeActionTimeMap = generateActionTimeMap(actionCount, response.data['params']);
+      console.log('undefined computeActionTime : ', computeActionTimeMap);
+
+      setRecipe((recipe) => ({
+        ...recipe,
+        recipeTimeData: computeActionTimeMap,
+        expectedTime: time,
+        actionCount: actionCount,
+        actionTime: response.data['actiontime'],
+        recipeTime: response.data['recipetime'],
+        actionTimeParams: response.data['params'],
+        actionTimeInRecipe: computeActionTimeMap
+      }));
+
+      return ;
+    }
+    else {
+      console.log('not undefined : ', recipe.actionTimeParams);
+      computeActionTimeMap = generateActionTimeMap(recipe.actionCount, recipe.actionTimeParams);
+      console.log('undefined computeActionTime : ', computeActionTimeMap);
+
+      setRecipe((recipe) => ({
+        ...recipe,
+        recipeTimeData: computeActionTimeMap,
+        expectedTime: time,
+        actionTime: actionTime,
+        recipeTime: recipeTime,
+        actionTimeParams: recipe.actionTimeParams,
+        actionTimeInRecipe: computeActionTimeMap
+      }));
+
+      return ;
+    }
   };
 
   const fetchRecipeLevel = () => {
@@ -317,18 +299,6 @@ export const RecipeForm = ({
           recipeLevelData: response.data['data']
         }));
       });
-  };
-
-  const mapActionTimeParams = () => {
-    if (recipe.actionTimeParams === undefined) {
-      ;
-    }
-    else {
-      Object.keys(recipe.actionTimeParams).map((key) => {
-        return recipe.actionTimeParams[key];
-      });
-    }
-    return [];
   };
 
   const verifyValue = () => {
