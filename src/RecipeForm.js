@@ -86,7 +86,10 @@ export const RecipeForm = ({
     });
     console.log('filterByActionKey : ', filterByActionKey);
     console.log('targetIndex : ', actionTimeParamsID);
+    console.log('recipe.actionTimeParams : ', recipe.actionTimeParams);
     const newActionTimeParams = recipe.actionTimeParams;
+    console.log('newActionTimeParams : ', newActionTimeParams);
+    console.log('target.value : ', target.value);
     newActionTimeParams[actionTimeParamsID]['time'] = Number(target.value);
 
     filterByActionKey = recipe.actionTimeInRecipe.filter((item, index) => {
@@ -187,12 +190,14 @@ export const RecipeForm = ({
   };
 
   const fetchTimeData = () => {
-    let data = recipe.nerText
-    let time;
     let actionCount;
+    let time;
+    let ner = recipe.nerText;
+    let wakati = recipe.wakatiText;
+
     axios.post(POST_URL + '/time', {
       method: 'POST',
-      data: data,
+      data: [ner, wakati],
       headers: {
         'Content-Types': 'application/json',
         'Access-Control-Allow-Origin': '*'
@@ -303,6 +308,56 @@ export const RecipeForm = ({
 
   const verifyValue = () => {
     console.log(recipe.recipeTimeData);
+    console.log('recipe : ', recipe);
+  }
+
+  const readJson = () => {
+    axios.post(POST_URL + '/read', {
+      method: 'POST',
+      data: recipe,
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+      .then((response) => {
+        console.log('response : ', response);
+        setRecipe((recipe) => ({
+          ...recipe,
+          ingredientsList: response.data.data['ingredientsList'],
+          originalRecipe: response.data.data['originalRecipe'],
+          annotatedRecipe: response.data.data['annotatedRecipe'],
+          recipeTimeData: response.data.data['recipeTimeData'],
+          recipeLevelData: response.data.data['recipeLevelData'],
+          nerText: response.data.data['nerText'],
+          wakatiText: response.data.data['wakatiText'],
+          expectedTime: response.data.data['expectedTime'],
+          actionTimeParams: response.data.data['actionTimeParams'],
+          selectedAction: response.data.data['selectedAction'],
+          selectedActionTime: response.data.data['selectedActionTime'],
+          actionCount: response.data.data['actionCount'],
+          actionTimeInRecipe: response.data.data['actionTimeInRecipe'],
+          actionTime: response.data.data['actionTime'],
+          recipeTime: response.data.data['recipeTime'],
+        }));
+        console.log('recipe : ', recipe);
+      });
+
+    return ;
+  }
+  const outputJson = () => {
+    axios.post(POST_URL + '/output', {
+      method: 'POST',
+      data: recipe,
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+  }
+
+  const recipeTest = () => {
+    console.log('recipeTest/recipe : ', recipe);
   }
 
   return (
@@ -310,7 +365,8 @@ export const RecipeForm = ({
       <button onClick={postRecipe}>レシピ</button>
       <button onClick={fetchTimeData}>時間</button>
       <button onClick={fetchRecipeLevel}>レベル</button>
-      <button onClick={verifyValue}>保存</button>
+      <button onClick={readJson}>読込</button>
+      <button onClick={outputJson}>保存</button>
       <form id="recipe" onSubmit={() => onSubmit(recipe)}>
         <div className="formTable">
           <div className="recipeLabels">
