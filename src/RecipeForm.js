@@ -29,6 +29,8 @@ export const RecipeForm = ({
   actionTimeInRecipe,
   actionTime,
   recipeTime,
+  dataList,
+  selectedData,
   loading,
   onSubmit
 }) => {
@@ -48,6 +50,8 @@ export const RecipeForm = ({
     actionTimeInRecipe,
     actionTime,
     recipeTime,
+    dataList,
+    selectedData,
     loading
   });
 
@@ -56,6 +60,7 @@ export const RecipeForm = ({
       ...recipe,
       [target.name]: target.value
     }));
+    console.log('recipe : ', recipe)
     console.log('recipe.originalRecipe: ', recipe.originalRecipe);
     console.log('recipe.selectedAction : ', recipe.selectedAction);
   };
@@ -356,17 +361,55 @@ export const RecipeForm = ({
     })
   }
 
+  const displayDataList = () => {
+    axios.post(POST_URL + '/select', {
+      method: 'POST',
+      data: recipe,
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+      .then((response) => {
+        console.log('response : ', response);
+        setRecipe((recipe) => ({
+          ...recipe,
+          dataList: response.data['data']
+        }));
+      })
+  }
+
   const recipeTest = () => {
     console.log('recipeTest/recipe : ', recipe);
   }
 
   return (
     <div>
-      <button onClick={postRecipe}>レシピ</button>
-      <button onClick={fetchTimeData}>時間</button>
-      <button onClick={fetchRecipeLevel}>レベル</button>
-      <button onClick={readJson}>読込</button>
-      <button onClick={outputJson}>保存</button>
+      <div className="recipeButton">
+        <button onClick={postRecipe}>レシピ</button>
+        <button onClick={fetchTimeData}>時間</button>
+        <button onClick={fetchRecipeLevel}>レベル</button>
+      </div>
+      <div className="fileButton">
+        <button onClick={displayDataList}>選択</button>
+        <form id="selectedData">
+            <select
+              name="selectedData"
+              value={recipe.selectedData}
+              id="selectedData"
+              onChange={handleChange}
+            >
+              {recipe.dataList === undefined
+               ? null
+               : recipe.dataList.map((data) => (
+                 <option key={data}>{data}</option>
+               ))
+              }
+            </select>
+        </form>
+        <button onClick={readJson}>読込</button>
+        <button onClick={outputJson}>保存</button>
+      </div>
       <form id="recipe" onSubmit={() => onSubmit(recipe)}>
         <div className="formTable">
           <div className="recipeLabels">
