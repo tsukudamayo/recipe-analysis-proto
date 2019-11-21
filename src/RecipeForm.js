@@ -4,8 +4,17 @@ import axios from 'axios';
 
 import { RadarChartWrapper } from './RadarChartWrapper';
 import { BarChartWrapper } from './BarChartWrapper';
+import { VerticalBarChartWrapper } from './VerticalBarChartWrapper';
+import { CustomTooltip } from './CustomTooltip.js';
 import { sampleRecipeName } from './sampleRecipeName.js';
 
+import {
+  recipeName,
+  nameRecipe,
+  weekcookStdRecipeData,
+  weekcookOrgRecipeData
+} from './sampleData';
+ 
 import './RecipeForm.css'
 
 const POST_URL = 'http://localhost:5000';
@@ -31,6 +40,18 @@ export const RecipeForm = ({
   recipeTime,
   dataList,
   selectedData,
+  verticalBarChartTarget,
+  verticalBarChartDataMart,
+  refferenceCurrentRecipeParams,
+  selectedParams,
+  radarChartDataMart,
+  refferenceRecipeLevel,
+  targetRecipeLevel,
+  refferenceRecipeParams,
+  targetRecipeParams,
+  refferenceRecipeID,
+  recipeTitle,
+  recipeUrl,
   loading,
   onSubmit
 }) => {
@@ -52,9 +73,24 @@ export const RecipeForm = ({
     recipeTime,
     dataList,
     selectedData,
+    verticalBarChartTarget,
+    verticalBarChartDataMart,
+    refferenceCurrentRecipeParams,
+    selectedParams,
+    radarChartDataMart,
+    refferenceRecipeLevel,
+    targetRecipeLevel,
+    refferenceRecipeParams,
+    targetRecipeParams,
+    refferenceRecipeID,
+    recipeTitle,
+    recipeUrl,
     loading
   });
 
+  // //////////// //
+  // form handler //
+  // //////////// //
   const handleChange = ({ target }) => {
     setRecipe((recipe) => ({
       ...recipe,
@@ -70,6 +106,76 @@ export const RecipeForm = ({
     setRecipe((recipe) => ({
       ...recipe,
       [target.name]: target.value,
+    }));
+  };
+
+  const axisChange = ({ target }) => {
+    console.log('axisChange');
+    console.log('[target.name] : ', [target.name]);
+    console.log('target.value : ', target.value);
+    setRecipe((recipe) => ({
+      ...recipe,
+      [target.name]: target.value
+    }));
+    createVerticalBarChartDataMart(recipe.recipeLevelData, target.value);
+  };
+
+  const computeLevel = (parameters) => {
+    return Math.round(parameters.reduce((a,b) => a > b ? a : b)*10)/10;
+  };
+
+  const refferenceChange = ({ target }) => {
+    console.log('refferenceChange');
+    console.log('[target.name] : ', [target.name]);
+    console.log('target.value : ', target.value);
+    let targetName = [target.name][0];
+    let targetValue = target.value;
+    let refferenceID = nameRecipe[0][targetValue];
+    let refRecipeLevel = recipe.refferenceRecipeLevel;
+    let refRecipeParams = recipe.refferenceRecipeParams;
+
+    console.log('targetName : ', targetName);
+    console.log('targetValue : ', targetValue);
+    console.log('reffeneceID : ', refferenceID);
+    console.log('refRecipeLevel : ', refRecipeLevel);
+    console.log('refRecipeParams : ', refRecipeParams);
+    
+    refRecipeParams = [
+      weekcookStdRecipeData[0][refferenceID],
+      weekcookStdRecipeData[1][refferenceID],
+      weekcookStdRecipeData[2][refferenceID],
+      weekcookStdRecipeData[3][refferenceID],
+      weekcookStdRecipeData[4][refferenceID]
+    ];
+    refRecipeLevel = computeLevel(refRecipeParams);
+
+    let refdata = refRecipeParams;
+    let dataMart = recipe.radarChartDataMart;
+    console.log('refferenceChange/dataMart : ', dataMart);
+    dataMart[0].refference = refdata[0];
+    dataMart[1].refference = refdata[1];
+    dataMart[2].refference = refdata[2];
+    dataMart[3].refference = refdata[3];
+    dataMart[4].refference = refdata[4];
+    let deleteTarget = 'level';
+    dataMart.some(function(v, i) {
+      if (v.name == deleteTarget) dataMart.splice(i, 1);
+    });
+    console.log('fetchRecipeLevel/dataMart : ', dataMart);
+
+    console.log('targetName : ', targetName);
+    console.log('targetValue : ', targetValue);
+    console.log('reffeneceID : ', refferenceID);
+    console.log('refRecipeLevel : ', refRecipeLevel);
+    console.log('refRecipeParams : ', refRecipeParams);
+
+    setRecipe((recipe) => ({
+      ...recipe,
+      [target.name]: target.value,
+      refferenceRecipeID: refferenceID,
+      refferenceRecipeLevel: refRecipeLevel,
+      refferenceRecipeParams: refRecipeParams,
+      radarChartDataMart: dataMart
     }));
   };
 
@@ -135,6 +241,9 @@ export const RecipeForm = ({
     return ;
   }
 
+  // //////////// //
+  // POST request //
+  // //////////// //
   const postRecipe = () => {
     console.log('body : ', JSON.stringify({'data': recipe.originalRecipe}));
     let data = recipe.originalRecipe;
@@ -169,6 +278,9 @@ export const RecipeForm = ({
     return ;
   };
 
+  // /////////////////////// //
+  // render recipe and graph //
+  // /////////////////////// //
   const generateColorAnnotation = (text) => {
     let textToWakatiList = text.split(' ');
     console.log('textToWakatiList : ', textToWakatiList);
@@ -292,6 +404,7 @@ export const RecipeForm = ({
   const fetchRecipeLevel = () => {
     let data = recipe.ingredientsList;
     let wakati = recipe.wakatiText;
+    
     axios.post(POST_URL + '/level', {
       method: 'POST',
       data: [data, wakati],
@@ -304,19 +417,44 @@ export const RecipeForm = ({
         console.log('response : ', response);
         console.log('recipe : ', recipe);
         console.log('data: ', response.data['data']);
+        console.log('fetchRecipeLevel/recipe.refferenceRecipeParams : ', recipe.refferenceRecipeParams);
+        let refdata;
+        if (recipe.refferenceRecipeParams == undefined) {
+          refdata = [0, 0, 0, 0, 0];
+        }
+        else {
+          refdata = recipe.refferenceRecipeParams;
+        }
+        console.log('fetchRecipeLevel/refdata : ', refdata);
+        let dataMart = response.data['data'];
+        dataMart[0].refference = refdata[0];
+        dataMart[1].refference = refdata[1];
+        dataMart[2].refference = refdata[2];
+        dataMart[3].refference = refdata[3];
+        dataMart[4].refference = refdata[4];
+        dataMart.pop();
+        console.log('fetchRecipeLevel/dataMart : ', dataMart);
+
         setRecipe((recipe) => ({
           ...recipe,
-          recipeLevelData: response.data['data']
+          recipeLevelData: response.data['data'],
+          radarChartDataMart: dataMart
         }));
+        createVerticalBarChartDataMart(response.data['data'], 'ingredients');
       });
+      
   };
 
   const verifyValue = () => {
     console.log(recipe.recipeTimeData);
     console.log('recipe : ', recipe);
-  }
+  };
 
+  // /////////////// //
+  // read and output //
+  // /////////////// //
   const readJson = () => {
+    console.log('recipe : ', recipe);
     axios.post(POST_URL + '/read', {
       method: 'POST',
       data: recipe,
@@ -344,13 +482,17 @@ export const RecipeForm = ({
           actionTimeInRecipe: response.data.data['actionTimeInRecipe'],
           actionTime: response.data.data['actionTime'],
           recipeTime: response.data.data['recipeTime'],
+          recipeTitle: response.data.data['recipeTitle'],
+          recipeUrl: response.data.data['recipeUrl']
         }));
         console.log('recipe : ', recipe);
       });
 
     return ;
-  }
+  };
+
   const outputJson = () => {
+    console.log('recipe : ', recipe);
     axios.post(POST_URL + '/output', {
       method: 'POST',
       data: recipe,
@@ -361,6 +503,9 @@ export const RecipeForm = ({
     })
   }
 
+  // ////////////////////////////// //
+  // for select save data file name //
+  // ////////////////////////////// //
   const displayDataList = () => {
     axios.post(POST_URL + '/select', {
       method: 'POST',
@@ -377,15 +522,119 @@ export const RecipeForm = ({
           dataList: response.data['data']
         }));
       })
-  }
+  };
 
+  // //////////////////////////////////////// //
+  // for dataMart for render verticalBarChart //
+  // //////////////////////////////////////// //
+  const createVerticalBarChartDataMart = (response, param) => {
+    let targetElement;
+    let refference;
+    let refferenceObject;
+    let targetRecipeLevel = recipe.targetRecipeLevel;
+    let targetRecipeParams = recipe.targetRecipeParams;
+
+    const parameterNameMap = {
+      'ingredients': '食材',
+      'sentences': '文字数',
+      'heat': '加熱',
+      'mix': '混ぜる',
+      'cut': '切る',
+      'level': 'レベル'
+    };
+
+    console.log('recipe.verticalBarChartTarget : ', recipe.verticalBarChartTarget);
+    console.log('recipe.selectedParams : ', recipe.selectedParams);
+    targetElement = param;
+      
+    let dataForVisualize = Object.keys(recipeName[0]).map((key) => {
+      return {
+        "name": recipeName[0][key],
+        "ingredients": weekcookStdRecipeData[0][key],
+        "sentences": weekcookStdRecipeData[1][key],
+        "heat": weekcookStdRecipeData[2][key],
+        "mix": weekcookStdRecipeData[3][key],
+        "cut": weekcookStdRecipeData[4][key],
+        "level": weekcookStdRecipeData[5][key],
+        "orgingredients": weekcookOrgRecipeData[0][key],
+        "orgsentences": weekcookOrgRecipeData[1][key],
+        "orgheat": weekcookOrgRecipeData[2][key],
+        "orgmix": weekcookOrgRecipeData[3][key],
+        "orgcut": weekcookOrgRecipeData[4][key],
+      };
+    });
+    dataForVisualize.sort(function(a, b) {
+      if (a[targetElement] > b[targetElement]) return -1;
+      if (a[targetElement] < b[targetElement]) return 1;
+      return 0;
+    });
+    console.log('dataForVisualize : ', dataForVisualize);
+
+    console.log('targetElement : ', targetElement);
+    const recipeLevelTargetElement = parameterNameMap[targetElement];
+    console.log('recipeLevelTargetElement : ', recipeLevelTargetElement);
+    console.log('response : ', response);
+    console.log('targetElement : ', targetElement);
+    refferenceObject = response.filter((item, index) => {
+      if(item.key == recipeLevelTargetElement) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    });
+    console.log('refferenceObject : ', refferenceObject);
+    refference = refferenceObject[0].target;
+    console.log('refference : ', refference);
+
+    targetRecipeParams = response;
+    console.log('createVerticalBarChartDataMart/targetRecipeParams : ', targetRecipeParams);
+    const targetRecipeParamsForLevel = [
+      response[0].target,
+      response[1].target,
+      response[2].target,
+      response[3].target,
+      response[4].target
+    ];
+    targetRecipeLevel = computeLevel(targetRecipeParamsForLevel);
+
+
+    setRecipe((recipe) => ({
+      ...recipe,
+      verticalBarChartDataMart: dataForVisualize,
+      verticalBarChartTarget: param,
+      refferenceCurrentRecipeParams: refference,
+      targetRecipeLevel: targetRecipeLevel,
+      targetRecipeParams: targetRecipeParams
+    }));
+  };
+
+  const targetKeyForVerticalBarChart = [
+    'ingredients', 'sentences', 'heat', 'mix', 'cut', 'level'
+  ];
+
+  const selectTargetVerticalBarChart = targetKeyForVerticalBarChart.map((key) => {
+    return <option value={key}>{key}</option>;
+  });
+
+  const selectRefferenceRecipeName = Object.keys(nameRecipe[0]).map((key) => {
+    return <option value={key}>{key}</option>
+  });
+
+  // ///////// //
+  // for debug //
+  // ///////// //
   const recipeTest = () => {
-    console.log('recipeTest/recipe : ', recipe);
-  }
+    console.log('nameRecipe : ', nameRecipe[0]);
+  };
 
+  // ////////////////////////// //
+  // render RecipForm Component //
+  // ////////////////////////// //
   return (
     <div>
       <div className="recipeButton">
+        <button onClick={recipeTest}>テスト</button>
         <button onClick={postRecipe}>レシピ</button>
         <button onClick={fetchTimeData}>時間</button>
         <button onClick={fetchRecipeLevel}>レベル</button>
@@ -409,6 +658,34 @@ export const RecipeForm = ({
         </form>
         <button onClick={readJson}>読込</button>
         <button onClick={outputJson}>保存</button>
+      </div>
+      <div className="recipeName">
+        <form
+          id="recipeName"
+        >
+          <label>
+            名前
+          </label>
+          <input
+            name="recipeTitle"
+            value={recipe.recipeTitle}
+            id="recipeTitle"
+            onChange={handleChange}
+            type="text"
+            size="40"
+          />
+          <label>
+            URL
+          </label>
+          <input
+            name="recipeUrl"
+            value={recipe.recipeUrl}
+            id="recipeUrl"
+            onChange={handleChange}
+            type="text"
+            size="40"
+          />
+        </form>
       </div>
       <form id="recipe" onSubmit={() => onSubmit(recipe)}>
         <div className="formTable">
@@ -480,9 +757,51 @@ export const RecipeForm = ({
           <BarChartWrapper
             data={recipe.actionTimeParams}
           />
+          <form id="refferenceRecipe">
+            <select
+              name="refferenceRecipe"
+              value={recipe.refferenceRecipe}
+              id="refferenceRecipe"
+              onChange={refferenceChange}
+            >
+              {nameRecipe=== undefined
+               ? null
+               : selectRefferenceRecipeName
+              }
+            </select>
+          </form>
+
+          <h2>青: {recipeName[recipe.refferenceRecipeID]} レベル: {recipe.refferenceRecipeLevel}</h2>
+          <form>
+            <input type="text" name="refference" list="refferenceList" onChange={refferenceChange} autocomplete="on"/>
+              <datalist id="refferenceList">
+                {selectRefferenceRecipeName}
+            </datalist>
+          </form>
+          
+          <h2>赤:  レベル: {recipe.targetRecipeLevel}</h2>
+
+
           <RadarChartWrapper
-            data={recipe.recipeLevelData}
+            data={recipe.radarChartDataMart}
             recipename={sampleRecipeName}
+          />
+          <form id="selectedParams">
+              <select
+                name="selectedParams"
+                value={recipe.selectedParams}
+                onChange={axisChange}
+              >
+                {selectTargetVerticalBarChart === undefined
+                 ? null
+                 : selectTargetVerticalBarChart
+                }
+              </select>
+          </form>
+          <VerticalBarChartWrapper
+            data={recipe.verticalBarChartDataMart}
+            target={recipe.verticalBarChartTarget}
+            refference={recipe.refferenceCurrentRecipeParams}
           />
         </div>
 
@@ -493,8 +812,6 @@ export const RecipeForm = ({
           }
         </div>
       </div>
-      
-
     </div>
   );
 };

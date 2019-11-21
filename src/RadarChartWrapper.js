@@ -22,8 +22,8 @@ export const RadarChartWrapper = ({ data, recipename }) => (
         fillOpacity={0.6}
       />
       <Radar
-        name={recipename['mean']}
-        dataKey="mean"
+        name={recipename['refference']}
+        dataKey="refference"
         stroke="#4169e1"
         fill="#a8d3ff"
         fillOpacity={0.6}
