@@ -92,32 +92,24 @@ export const RecipeForm = ({
   // form handler //
   // //////////// //
   const handleChange = ({ target }) => {
-    setRecipe((recipe) => ({
-      ...recipe,
-      [target.name]: target.value
-    }));
-    console.log('recipe : ', recipe)
-    console.log('recipe.originalRecipe: ', recipe.originalRecipe);
-    console.log('recipe.selectedAction : ', recipe.selectedAction);
-  };
-
-  const parameterChange = ({ target }) => {
-    parameterHandler(target);
-    setRecipe((recipe) => ({
-      ...recipe,
-      [target.name]: target.value,
-    }));
-  };
-
-  const axisChange = ({ target }) => {
-    console.log('axisChange');
+    console.log('handleChange');
     console.log('[target.name] : ', [target.name]);
     console.log('target.value : ', target.value);
     setRecipe((recipe) => ({
       ...recipe,
       [target.name]: target.value
     }));
-    createVerticalBarChartDataMart(recipe.recipeLevelData, target.value);
+    switch(target.name) {
+    case 'selectedActionTime':
+      parameterHandler(target);
+      break;
+    case 'selectedParams':
+      createVerticalBarChartDataMart(recipe.recipeLevelData, target.value);
+      break;
+    default:
+      ;
+      break;
+    }
   };
 
   const computeLevel = (parameters) => {
@@ -328,7 +320,7 @@ export const RecipeForm = ({
         time = response.data['time'];
         actionTime = response.data['actiontime']
         recipeTime = response.data['recipetime']
-        dataMart(response, actionCount, time);
+        recipeTimeDataMart(response, actionCount, time);
       });
 
     console.log('recipe.nerText : ', recipe.nerText);
@@ -362,7 +354,7 @@ export const RecipeForm = ({
     return computeActionTimeMap;
   }
 
-  const dataMart = (response, actionCount, time) => {
+  const recipeTimeDataMart = (response, actionCount, time) => {
     let computeActionTimeMap;
     if (recipe.actionTimeParams === undefined) {
       console.log('undefined : ', response.data['params']);
@@ -598,7 +590,6 @@ export const RecipeForm = ({
     ];
     targetRecipeLevel = computeLevel(targetRecipeParamsForLevel);
 
-
     setRecipe((recipe) => ({
       ...recipe,
       verticalBarChartDataMart: dataForVisualize,
@@ -737,7 +728,7 @@ export const RecipeForm = ({
             name="selectedActionTime"
             value={recipe.selectedActionTime}
             id="selectedActioTime"
-            onChange={parameterChange}
+            onChange={handleChange}
           />
         </form>
 
@@ -790,7 +781,7 @@ export const RecipeForm = ({
               <select
                 name="selectedParams"
                 value={recipe.selectedParams}
-                onChange={axisChange}
+                onChange={handleChange}
               >
                 {selectTargetVerticalBarChart === undefined
                  ? null
