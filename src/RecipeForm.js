@@ -16,8 +16,8 @@ import {
  
 import './RecipeForm.css'
 
-const POST_URL = 'http://localhost:5000';
-// const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net';
+// const POST_URL = 'http://localhost:5000';
+const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net';
 // const POST_URL = 'http://23.100.108.226:5000';
 // const POST_URL = 'http://192.168.99.100:5000';
 
@@ -51,6 +51,9 @@ export const RecipeForm = ({
   refferenceRecipeID,
   recipeTitle,
   recipeUrl,
+  selectedRecipeDataType,
+  selectedRecipeDataTypeFiles,
+  selectedRecipeDataTypeFile,
   loading,
   onSubmit
 }) => {
@@ -84,6 +87,9 @@ export const RecipeForm = ({
     refferenceRecipeID,
     recipeTitle,
     recipeUrl,
+    selectedRecipeDataType,
+    selectedRecipeDataTypeFiles,
+    selectedRecipeDataTypeFile,
     loading
   });
 
@@ -108,10 +114,36 @@ export const RecipeForm = ({
     case 'refferenceRecipe':
       refferenceHandler(target);
       break;
+    case 'selectedRecipeDataType':
+      fetchRecipeDataFiles(target);
+      break;
     default:
       ;
       break;
     }
+  };
+
+  const fetchRecipeDataFiles = (target) => {
+    console.log('fetchRecipeDataFiles');
+    console.log('[target.name] : ', [target.name]);
+    console.log('target.value : ', target.value);
+    axios.post(POST_URL + '/filelist', {
+      method: 'POST',
+      data: target.value,
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      }
+    })
+      .then((response) => {
+        console.log('response : ', response);
+        console.log('recipe : ', recipe);
+        setRecipe((recipe) => ({
+          ...recipe,
+          selectedRecipeDataTypeFiles: response.data['data']
+        }));
+      });
+    
   };
 
   const computeLevel = (parameters) => {
@@ -576,6 +608,44 @@ export const RecipeForm = ({
     })
   }
 
+  const importData = () => {
+    console.log('recipe : ', recipe);
+    axios.post(POST_URL + '/import', {
+      method: 'POST',
+      data: recipe,
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+      .then((response) => {
+        console.log('response : ', response);
+        console.log('response.data.data["ingredients"] : ', response.data.data['ingredients']);
+        setRecipe((recipe) => ({
+          ...recipe,
+          ingredientsList: objectToIngredientsText(response.data.data['ingredients']),
+          originalRecipe: response.data.data['recipe'],
+          recipeUrl: response.data.data['url'],
+          recipeTitle: response.data.data['title']
+        }));
+      });
+  }
+
+  const objectToIngredientsText = (ingredientsObject) => {
+    let outputText = '';
+    Object.keys(ingredientsObject).forEach(function(key, idx) {
+      console.log('key : ', key);
+      console.log('v : ', ingredientsObject[key]);
+      outputText += key;
+      outputText += '　';
+      outputText += ingredientsObject[key];
+      outputText += '\n';
+    });
+    console.log('outputText : ', outputText);
+
+    return outputText;
+  };
+
   // ////////////////////////////// //
   // for select save data file name //
   // ////////////////////////////// //
@@ -619,6 +689,14 @@ export const RecipeForm = ({
     return <option value={key}>{key}</option>
   });
 
+  const recipeDataType = [
+    'orangepage', 'betterhome'
+  ];
+
+  const selectRecipeDataType = recipeDataType.map((key) => {
+    return <option value={key}>{key}</option>
+  });
+
   // ////////////////////////// //
   // render RecipForm Component //
   // ////////////////////////// //
@@ -649,6 +727,33 @@ export const RecipeForm = ({
         </form>
         <button onClick={readJson}>読込</button>
         <button onClick={outputJson}>保存</button>
+      </div>
+      <div  className="importData">
+        <form id="selectedRecipeDataType">
+          <select
+            name="selectedRecipeDataType"
+            value={recipe.selectedRecipeDataType}
+            id="selectedRecipeDataType"
+            onChange={handleChange}
+          >
+            {selectRecipeDataType}
+          </select>
+          <select
+            name="selectedRecipeDataTypeFile"
+            value={recipe.selectedRecipeDataTypeFile}
+            id="selectedRecipeDataTypeFile"
+            onChange={handleChange}
+          >
+            {recipe.selectedRecipeDataTypeFiles === undefined
+             ? null
+             : recipe.selectedRecipeDataTypeFiles.map((data) => (
+               <option key={data}>{data}</option>
+             ))
+            }
+          </select>
+          
+        </form>
+        <button onClick={importData}>インポート</button>
       </div>
       <div className="recipeName">
         <form
