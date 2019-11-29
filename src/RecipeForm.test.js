@@ -33,11 +33,14 @@ describe('RecipeForm', () => {
     render(<RecipeForm />);
     const submitButton = container.querySelectorAll('button');
     expect(submitButton).not.toBeNull();
-    expect(submitButton).toHaveLength(4);
+    expect(submitButton).toHaveLength(7);
     expect(submitButton[0].textContent).toMatch('レシピ');
     expect(submitButton[1].textContent).toMatch('時間');
     expect(submitButton[2].textContent).toMatch('レベル');
-    expect(submitButton[3].textContent).toMatch('保存');
+    expect(submitButton[3].textContent).toMatch('選択');
+    expect(submitButton[4].textContent).toMatch('読込');
+    expect(submitButton[5].textContent).toMatch('保存');
+    expect(submitButton[6].textContent).toMatch('インポート');
   });
   it('has div that renders post request', () => {
     render(<RecipeForm />);
@@ -64,7 +67,7 @@ describe('RecipeForm', () => {
       />
     );
     expect(container.querySelector('form[id="actionTimeParams"]')).not.toBeNull();
-    expect(container.querySelectorAll('option')[0].textContent).toEqual('焼く');
+    expect(container.querySelectorAll('option')[2].textContent).toEqual('焼く');
   });
 
   const itRendersAsTextBox = (fieldName) => {

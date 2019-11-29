@@ -13,7 +13,7 @@ import {
 
 import { CustomTooltip } from './CustomTooltip';
 
-export const VerticalBarChartWrapper = ({ data, target, refference }) => (
+export const VerticalBarChartWrapper = ({ data, target, refferenceValue, refferenceName }) => (
   <BarChart
     width={1000}
     height={500}
@@ -26,8 +26,8 @@ export const VerticalBarChartWrapper = ({ data, target, refference }) => (
     <XAxis type="number" domain={[0, 'dataMax']}/>
     <Tooltip content={<CustomTooltip />} />
     <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
-    <ReferenceLine y={0} height={30} stroke="#8884d8" />
-    <ReferenceLine x={refference} height={30} stroke="#008000" label="このレシピ"/>
+    <ReferenceLine y={refferenceName} height={30} stroke="#ff0000" label="このレシピ"/>
+    {/* <ReferenceLine x={refferenceValue} height={30} stroke="#008000" label="このレシピ"/> */}
     <Bar dataKey={target} fill="#8884d8" />
   </BarChart>
 );
