@@ -5,6 +5,7 @@ import axios from 'axios';
 import { RadarChartWrapper } from './RadarChartWrapper';
 import { BarChartWrapper } from './BarChartWrapper';
 import { VerticalBarChartWrapper } from './VerticalBarChartWrapper';
+import { FlowgraphWrapper } from './FlowgarphWrapper';
 import { sampleRecipeName } from './sampleRecipeName.js';
 
 import {
@@ -54,6 +55,7 @@ export const RecipeForm = ({
   selectedRecipeDataType,
   selectedRecipeDataTypeFiles,
   selectedRecipeDataTypeFile,
+  flowGraphData,
   loading,
   onSubmit
 }) => {
@@ -90,6 +92,7 @@ export const RecipeForm = ({
     selectedRecipeDataType,
     selectedRecipeDataTypeFiles,
     selectedRecipeDataTypeFile,
+    flowGraphData,
     loading
   });
 
@@ -697,6 +700,27 @@ export const RecipeForm = ({
       })
   };
 
+  // ///////////////////////// //
+  // fetch data for flowGarph //
+  // //////////////////////// //
+  const fetchFlowGraphData = () => {
+    axios.post(POST_URL + '/flowgraph', {
+      method: 'POST',
+      data: recipe,
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+      .then((response) => {
+        console.log('response : ', response);
+        setRecipe((recipe) => ({
+          ...recipe,
+          flowGraphData: response.data['data']
+        }));
+      })
+  };
+
   // ///////// //
   // for debug //
   // ///////// //
@@ -746,6 +770,7 @@ export const RecipeForm = ({
         <button onClick={postRecipe}>レシピ</button>
         <button onClick={fetchTimeData}>時間</button>
         <button onClick={fetchRecipeLevel}>レベル</button>
+        <button onClick={fetchFlowGraphData}>グラフ</button>
       </div>
       <div className="fileButton">
         <button onClick={displayDataList}>選択</button>
@@ -937,6 +962,13 @@ export const RecipeForm = ({
             refferenceValue={recipe.refferenceCurrentRecipeParams}
             refferenceName={recipe.recipeTitle === undefined ? "recipename" : recipe.recipeTitle}
           />
+        </div>
+
+        <div className="flowGraph">
+          {recipe.flowGraphData === undefined
+           ? null
+           : <FlowgraphWrapper data={recipe.flowGraphData}/>
+          }
         </div>
 
         <div className="recipeForms">
