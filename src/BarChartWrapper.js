@@ -8,22 +8,26 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  Legend
+  Legend,
 } from 'recharts';
 
-export const BarChartWrapper = ({ data }) => (
-  <BarChart
-    width={500}
-    height={500}
-    data={data}
-    margin={{top: 5, right: 30, left: 0, bottom: 5,}}
-  >
-    <CartesianGrid strokeDasharray="3 3" />
-    <XAxis dataKey="action" />
-    <YAxis dataKey="time"/>
-    <Tooltip />
-    <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
-    <Brush dataKey="action" height={30} stroke="#000" />
-    <Bar dataKey="time" fill="#8884d8" />
-  </BarChart>
-);
+export const BarChartWrapper = ({ data }) => {
+  console.log('BarChartWrapper data : ', data);
+  return (
+    <BarChart
+      width={500}
+      height={500}
+      data={data}
+      margin={{top: 5, right: 30, left: 0, bottom: 5,}}
+    >
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="action" allowDataOverflow="true"/>
+      <YAxis dataKey="time"/>
+      <Tooltip />
+      <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
+      <Brush dataKey="action" height={30} stroke="#000" />
+      <Bar dataKey="time" fill="#8884d8" />
+    </BarChart>
+  );
+};
+

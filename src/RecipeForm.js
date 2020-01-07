@@ -18,7 +18,7 @@ import {
 import './RecipeForm.css'
 
 // const POST_URL = 'http://localhost:5000';
-const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net';
+const POST_URL = 'https:sampleweekcookdatapotal.azurewebsites.net';
 // const POST_URL = 'http://23.100.108.226:5000';
 // const POST_URL = 'http://192.168.99.100:5000';
 
@@ -56,6 +56,8 @@ export const RecipeForm = ({
   selectedRecipeDataTypeFiles,
   selectedRecipeDataTypeFile,
   flowGraphData,
+  attachAction,
+  attachTime,
   loading,
   onSubmit
 }) => {
@@ -93,6 +95,8 @@ export const RecipeForm = ({
     selectedRecipeDataTypeFiles,
     selectedRecipeDataTypeFile,
     flowGraphData,
+    attachAction,
+    attachTime,
     loading
   });
 
@@ -258,6 +262,7 @@ export const RecipeForm = ({
 
     const summationActionTime = newActionTimeInRecipe.reduce((a, b) => a + b.time, 0);
     const evaluationRecipeTime = summationActionTime + recipe.recipeTime;
+    console.log('newActionTimeParmas : ', newActionTimeParams);
 
     setRecipe((recipe) => ({
       ...recipe,
@@ -452,25 +457,49 @@ export const RecipeForm = ({
     let time;
     let ner = recipe.nerText;
     let wakati = recipe.wakatiText;
+    console.log('actionTimeParams : ', recipe.actionTimeParams);
 
-    axios.post(POST_URL + '/time', {
-      method: 'POST',
-      data: [ner, wakati],
-      headers: {
-        'Content-Types': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    })
-      .then((response) => {
-        console.log('response : ', response);
-        console.log('recipe : ', recipe);
-        console.log('actionTimeParams : ', recipe.actionTimeParams);
-        actionCount = response.data['count'];
-        time = response.data['time'];
-        actionTime = response.data['actiontime']
-        recipeTime = response.data['recipetime']
-        recipeTimeDataMart(response, actionCount, time);
-      });
+    if (recipe.actionTimeParams === undefined) {
+      console.log('undefined fetchTimeData');
+      axios.post(POST_URL + '/time', {
+        method: 'POST',
+        data: [ner, wakati],
+        headers: {
+          'Content-Types': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      })
+        .then((response) => {
+          console.log('response : ', response);
+          console.log('recipe : ', recipe);
+          console.log('actionTimeParams : ', recipe.actionTimeParams);
+          actionCount = response.data['count'];
+          time = response.data['time'];
+          // actionTime = response.data['actiontime']
+          // recipeTime = response.data['recipetime']
+          recipeTimeDataMart(response, actionCount, time);
+        });
+    }
+    else {
+      console.log('not undefined timeFetchData');
+      // time = recipe.recipeTimeData.reduce((t, x) => t + x.time, 0);
+      axios.post(POST_URL + '/time', {
+        method: 'POST',
+        data: [ner, wakati],
+        headers: {
+          'Content-Types': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      })
+        .then((response) => {
+          console.log('response : ', response);
+          console.log('recipe : ', recipe);
+          console.log('actionTimeParams : ', recipe.actionTimeParams);
+          actionCount = response.data['count'];
+          time = response.data['time'];
+          recipeTimeDataMart(response, actionCount, time);
+        });
+    }
 
     console.log('recipe.nerText : ', recipe.nerText);
     console.log('recipeTimeData : ', recipeTimeData);
@@ -505,6 +534,8 @@ export const RecipeForm = ({
 
   const recipeTimeDataMart = (response, actionCount, time) => {
     let computeActionTimeMap;
+    console.log('recipe.actionTimeParams : ', recipe.actionTimeParams);
+    console.log('recipTimeDataMart/actionCount : ', actionCount);
     if (recipe.actionTimeParams === undefined) {
       console.log('undefined : ', response.data['params']);
       computeActionTimeMap = generateActionTimeMap(actionCount, response.data['params']);
@@ -525,15 +556,19 @@ export const RecipeForm = ({
     }
     else {
       console.log('not undefined : ', recipe.actionTimeParams);
-      computeActionTimeMap = generateActionTimeMap(recipe.actionCount, recipe.actionTimeParams);
-      console.log('undefined computeActionTime : ', computeActionTimeMap);
+      computeActionTimeMap = generateActionTimeMap(actionCount, recipe.actionTimeParams);
+      console.log('not undefinde : ', recipe.actionTimeParams);
+      console.log('not undefined computeActionTime : ', computeActionTimeMap);
+      let newActionTime = computeActionTimeMap.reduce((t, x) => t + x.time, 0);
+      let newExpectedTime = newActionTime + response.data['recipetime'];
 
       setRecipe((recipe) => ({
         ...recipe,
         recipeTimeData: computeActionTimeMap,
-        expectedTime: time,
-        actionTime: actionTime,
-        recipeTime: recipeTime,
+        expectedTime: newExpectedTime,
+        actionCount: actionCount,
+        actionTime: newActionTime,
+        recipeTime: response.data['recipetime'],
         actionTimeParams: recipe.actionTimeParams,
         actionTimeInRecipe: computeActionTimeMap
       }));
@@ -585,7 +620,6 @@ export const RecipeForm = ({
         }));
         createVerticalBarChartDataMart(allData, 'ingredients');
       });
-      
   };
 
   // /////////////// //
@@ -761,6 +795,67 @@ export const RecipeForm = ({
     return '出典: 不明';
   }
 
+  const attachActionParams = () => {
+    console.log('attachActionParams');
+    let params = recipe.actionTimeParams;
+    console.log('orgParams : ', params);
+    let action = recipe.attachAction;
+    console.log('action : ', action);
+    let time = recipe.attachTime;
+    console.log('time : ', time);
+    let attachParams = {};
+    attachParams.action = action;
+    attachParams.time = Number(time);
+    params.push(attachParams);
+    console.log('newParams : ', params);
+
+    setRecipe((recipe) => ({
+      ...recipe,
+      actionTimeParams: params
+    }));
+
+    fetchTimeData();
+    outputAttachActionParams();
+
+    return ;
+  };
+
+  const outputAttachActionParams = () => {
+    console.log('recipe : ', recipe);
+    axios.post(POST_URL + '/attachac', {
+      method: 'POST',
+      data: recipe.actionTimeParams,
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+
+    return ;
+  }
+
+  const resetActionParams = () => {
+    axios.post(POST_URL + '/resetparams', {
+      method: 'POST',
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+  };
+
+  const testActionTimeParams = () => {
+    console.log('test actionTimeParams : ', recipe.actionTimeParams);
+    console.log('test : ', recipe.recipeTimeData);
+    let data = recipe.recipeTimeData;
+    data.push({'action': 'action', 'time': 10});
+    console.log('data : ', data);
+    setRecipe((recipe) => ({
+      ...recipe,
+      recipeTimeData: data
+    }));
+  };
+
   // ////////////////////////// //
   // render RecipForm Component //
   // ////////////////////////// //
@@ -771,6 +866,7 @@ export const RecipeForm = ({
         <button onClick={fetchTimeData}>時間</button>
         <button onClick={fetchRecipeLevel}>レベル</button>
         <button onClick={fetchFlowGraphData}>グラフ</button>
+        <button onClick={testActionTimeParams}>テスト</button>
       </div>
       <div className="fileButton">
         <button onClick={displayDataList}>選択</button>
@@ -885,7 +981,8 @@ export const RecipeForm = ({
       </form>
 
       <div className="resultRendering">
-        <form id="actionTimeParams">
+        <form id="selectedAction">
+          <label>Action 時間変更</label>
           <select
             name="selectedAction"
             value={recipe.selectedAction}
@@ -899,13 +996,32 @@ export const RecipeForm = ({
              ))
             }
           </select>
+
           <input
             name="selectedActionTime"
             value={recipe.selectedActionTime}
-            id="selectedActioTime"
+            id="selectedActionTime"
             onChange={handleChange}
           />
         </form>
+        <form>
+          <label>Action 追加</label>
+          <input
+            name="attachAction"
+            value={recipe.attachAction}
+            id="attachAction"
+            onChange={handleChange}
+          />
+          <label>時間 追加</label>
+          <input
+            name="attachTime"
+            value={recipe.attachTime}
+            id="attachTime"
+            onChange={handleChange}
+          />
+        </form>
+        <button onClick={attachActionParams}>Action 追加</button>
+        <button onClick={resetActionParams}>追加したActionをリセット</button>
 
         <div className="chartCell">
           <div className="expectedTime">
@@ -923,6 +1039,7 @@ export const RecipeForm = ({
           <BarChartWrapper
             data={recipe.actionTimeParams}
           />
+
           <form id="refferenceRecipe">
             <select
               name="refferenceRecipe"
