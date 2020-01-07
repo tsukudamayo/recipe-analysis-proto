@@ -15,7 +15,7 @@ import {
   weekcookOrgRecipeData
 } from './sampleData';
  
-import './RecipeForm.css'
+import './RecipeForm.css';
 
 // const POST_URL = 'http://localhost:5000';
 const POST_URL = 'https:sampleweekcookdatapotal.azurewebsites.net';
