@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Loader from 'react-loader-spinner';
 import axios from 'axios';
 
@@ -18,13 +18,14 @@ import {
 import './RecipeForm.css'
 
 // const POST_URL = 'http://localhost:5000';
-const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net';
+// const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net';
 // const POST_URL = 'http://23.100.108.226:5000';
 // const POST_URL = 'http://192.168.99.100:5000';
+const POST_URL = 'http://192.168.1.137:5000';
 
 export const RecipeForm = ({
-  ingredientsList,
-  originalRecipe,
+  ingredients,
+  recipe,
   annotatedRecipe,
   recipeTimeData,
   recipeLevelData,
@@ -50,20 +51,22 @@ export const RecipeForm = ({
   refferenceRecipeParams,
   targetRecipeParams,
   refferenceRecipeID,
-  recipeTitle,
-  recipeUrl,
+  title,
+  url,
+  selectedRecipeDataTypes,
   selectedRecipeDataType,
   selectedRecipeDataTypeFiles,
   selectedRecipeDataTypeFile,
   flowGraphData,
   attachAction,
   attachTime,
+  sourceRefference,
   loading,
   onSubmit
 }) => {
-  const [recipe, setRecipe] = useState({
-    ingredientsList,
-    originalRecipe,
+  const [recipes, setRecipes] = useState({
+    ingredients,
+    recipe,
     annotatedRecipe,
     recipeTimeData,
     recipeLevelData,
@@ -89,15 +92,26 @@ export const RecipeForm = ({
     refferenceRecipeParams,
     targetRecipeParams,
     refferenceRecipeID,
-    recipeTitle,
-    recipeUrl,
+    title,
+    url,
+    selectedRecipeDataTypes,
     selectedRecipeDataType,
     selectedRecipeDataTypeFiles,
     selectedRecipeDataTypeFile,
     flowGraphData,
     attachAction,
     attachTime,
+    sourceRefference,
     loading
+  });
+
+  useEffect(() => {
+    console.log('render');
+    if (recipes.selectedRecipeDataTypeFiles === undefined) {
+      fetchRecipeDataFilesForDefaultProps();
+    }
+    displayDataListForUseEffect();
+      
   });
 
   // //////////// //
@@ -107,8 +121,8 @@ export const RecipeForm = ({
     console.log('handleChange');
     console.log('[target.name] : ', [target.name]);
     console.log('target.value : ', target.value);
-    setRecipe((recipe) => ({
-      ...recipe,
+    setRecipes((recipes) => ({
+      ...recipes,
       [target.name]: target.value
     }));
     switch(target.name) {
@@ -116,7 +130,7 @@ export const RecipeForm = ({
       parameterHandler(target);
       break;
     case 'selectedParams':
-      createVerticalBarChartDataMart(recipe.recipeLevelData, target.value);
+      createVerticalBarChartDataMart(recipes.recipeLevelData, target.value);
       break;
     case 'refferenceRecipe':
       refferenceHandler(target);
@@ -144,13 +158,32 @@ export const RecipeForm = ({
     })
       .then((response) => {
         console.log('response : ', response);
-        console.log('recipe : ', recipe);
-        setRecipe((recipe) => ({
-          ...recipe,
+        console.log('recipe : ', recipes);
+        setRecipes((recipes) => ({
+          ...recipes,
           selectedRecipeDataTypeFiles: response.data['data']
         }));
       });
     
+  };
+
+  const fetchRecipeDataFilesForDefaultProps = () => {
+    axios.post(POST_URL + '/filelist', {
+      method: 'POST',
+      data: 'betterhome',
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      }
+    })
+      .then((response) => {
+        console.log('response : ', response);
+	console.log('recipes : ', recipes);
+        setRecipes((recipes) => ({
+          ...recipes,
+          selectedRecipeDataTypeFiles: response.data['data']
+        }));
+      });
   };
 
   const computeLevel = (parameters) => {
@@ -164,8 +197,8 @@ export const RecipeForm = ({
     let targetName = [target.name][0];
     let targetValue = target.value;
     let refferenceID = nameRecipe[0][targetValue];
-    let refRecipeLevel = recipe.refferenceRecipeLevel;
-    let refRecipeParams = recipe.refferenceRecipeParams;
+    let refRecipeLevel = recipes.refferenceRecipeLevel;
+    let refRecipeParams = recipes.refferenceRecipeParams;
 
     console.log('targetName : ', targetName);
     console.log('targetValue : ', targetValue);
@@ -183,7 +216,7 @@ export const RecipeForm = ({
     refRecipeLevel = computeLevel(refRecipeParams);
 
     let refdata = refRecipeParams;
-    let dataMart = recipe.radarChartDataMart;
+    let dataMart = recipes.radarChartDataMart;
     console.log('refferenceHandler/dataMart : ', dataMart);
     dataMart[0].refference = refdata[0];
     dataMart[1].refference = refdata[1];
@@ -202,8 +235,8 @@ export const RecipeForm = ({
     console.log('refRecipeLevel : ', refRecipeLevel);
     console.log('refRecipeParams : ', refRecipeParams);
 
-    setRecipe((recipe) => ({
-      ...recipe,
+    setRecipes((recipes) => ({
+      ...recipes,
       [target.name]: target.value,
       refferenceRecipeID: refferenceID,
       refferenceRecipeLevel: refRecipeLevel,
@@ -213,14 +246,14 @@ export const RecipeForm = ({
   };
 
   const parameterHandler = (target) => {
-    console.log('recipe.selectedAction : ', recipe.selectedAction);
-    console.log('recipe.actionTimeParams : ', recipe.actionTimeParams);
+    console.log('recipes.selectedAction : ', recipes.selectedAction);
+    console.log('recipes.actionTimeParams : ', recipes.actionTimeParams);
     let filterByActionKey;
     let actionTimeParamsID;
     let actionTimeInRecipeID;
     let actionCountID;
-    filterByActionKey = recipe.actionTimeParams.filter((item, index) => {
-      if (item['action'] === recipe.selectedAction) {
+    filterByActionKey = recipes.actionTimeParams.filter((item, index) => {
+      if (item['action'] === recipes.selectedAction) {
         actionTimeParamsID = index;
         return true;
       }
@@ -230,14 +263,14 @@ export const RecipeForm = ({
     });
     console.log('filterByActionKey : ', filterByActionKey);
     console.log('targetIndex : ', actionTimeParamsID);
-    console.log('recipe.actionTimeParams : ', recipe.actionTimeParams);
-    const newActionTimeParams = recipe.actionTimeParams;
+    console.log('recipes.actionTimeParams : ', recipes.actionTimeParams);
+    const newActionTimeParams = recipes.actionTimeParams;
     console.log('newActionTimeParams : ', newActionTimeParams);
     console.log('target.value : ', target.value);
     newActionTimeParams[actionTimeParamsID]['time'] = Number(target.value);
 
-    filterByActionKey = recipe.actionTimeInRecipe.filter((item, index) => {
-      if (item['action'] === recipe.selectedAction) {
+    filterByActionKey = recipes.actionTimeInRecipe.filter((item, index) => {
+      if (item['action'] === recipes.selectedAction) {
         actionTimeInRecipeID = index;
         return true;
       }
@@ -246,8 +279,8 @@ export const RecipeForm = ({
       }
     });
 
-    filterByActionKey = recipe.actionCount.filter((item, index) => {
-      if (item['action'] === recipe.selectedAction) {
+    filterByActionKey = recipes.actionCount.filter((item, index) => {
+      if (item['action'] === recipes.selectedAction) {
         actionCountID = index;
         return true;
       }
@@ -256,16 +289,16 @@ export const RecipeForm = ({
       }
     });
 
-    const newActionTimeInRecipe = recipe.actionTimeInRecipe;
-    newActionTimeInRecipe[actionTimeInRecipeID]['time'] = Number(target.value) * recipe.actionCount[actionCountID]['count'];
+    const newActionTimeInRecipe = recipes.actionTimeInRecipe;
+    newActionTimeInRecipe[actionTimeInRecipeID]['time'] = Number(target.value) * recipes.actionCount[actionCountID]['count'];
     console.log('newActionTimeInRecipe[targetIndex] : ', newActionTimeInRecipe[actionTimeInRecipeID]);
 
     const summationActionTime = newActionTimeInRecipe.reduce((a, b) => a + b.time, 0);
-    const evaluationRecipeTime = summationActionTime + recipe.recipeTime;
+    const evaluationRecipeTime = summationActionTime + recipes.recipeTime;
     console.log('newActionTimeParmas : ', newActionTimeParams);
 
-    setRecipe((recipe) => ({
-      ...recipe,
+    setRecipes((recipes) => ({
+      ...recipes,
       recipeTimeData: newActionTimeInRecipe,
       actionTimeParams: newActionTimeParams,
       actionTime: summationActionTime,
@@ -282,8 +315,8 @@ export const RecipeForm = ({
     let targetElement;
     let refference;
     let refferenceObject;
-    let targetRecipeLevel = recipe.targetRecipeLevel;
-    let targetRecipeParams = recipe.targetRecipeParams;
+    let targetRecipeLevel = recipes.targetRecipeLevel;
+    let targetRecipeParams = recipes.targetRecipeParams;
 
     const parameterNameMap = {
       'ingredients': '食材',
@@ -295,8 +328,8 @@ export const RecipeForm = ({
     };
 
     console.log('createVerticalBarChartDataMart/response : ', response);
-    console.log('recipe.verticalBarChartTarget : ', recipe.verticalBarChartTarget);
-    console.log('recipe.selectedParams : ', recipe.selectedParams);
+    console.log('recipe.verticalBarChartTarget : ', recipes.verticalBarChartTarget);
+    console.log('recipe.selectedParams : ', recipes.selectedParams);
     targetElement = param;
       
     let dataForVisualize = Object.keys(recipeName[0]).map((key) => {
@@ -325,7 +358,7 @@ export const RecipeForm = ({
     ];
     let refferenceRecipeLevel = Math.max.apply(null, refferenceRecipeData);
     let refferenceForVisualize = {
-      "name": recipe.recipeTitle,
+      "name": recipes.title,
       "ingredients": response[0].target,
       "sentences": response[1].target,
       "heat": response[2].target,
@@ -340,7 +373,7 @@ export const RecipeForm = ({
     };
 
     dataForVisualize.push(refferenceForVisualize);
-    console.log('recipe.recipeLevelData : ', recipe.recipeLevelData);
+    console.log('recipes.recipeLevelData : ', recipes.recipeLevelData);
 
     dataForVisualize.sort(function(a, b) {
       if (a[targetElement] > b[targetElement]) return -1;
@@ -377,8 +410,8 @@ export const RecipeForm = ({
     ];
     targetRecipeLevel = computeLevel(targetRecipeParamsForLevel);
 
-    setRecipe((recipe) => ({
-      ...recipe,
+    setRecipes((recipes) => ({
+      ...recipes,
       verticalBarChartDataMart: dataForVisualize,
       verticalBarChartTarget: param,
       refferenceCurrentRecipeParams: refference,
@@ -391,13 +424,13 @@ export const RecipeForm = ({
   // POST request //
   // //////////// //
   const postRecipe = () => {
-    console.log('body : ', JSON.stringify({'data': recipe.originalRecipe}));
-    let data = recipe.originalRecipe;
-    setRecipe((recipe) => ({
-      ...recipe,
+    console.log('body : ', JSON.stringify({'data': recipes.recipe}));
+    let data = recipes.recipe;
+    setRecipes((recipes) => ({
+      ...recipes,
       loading: true
     }));
-    console.log('recipe.loading : ', recipe.loading);
+    console.log('recipe.loading : ', recipes.loading);
     axios.post(POST_URL + '/ner', {
       method: 'POST',
       data: data,
@@ -408,17 +441,17 @@ export const RecipeForm = ({
     })
       .then((response) => {
         console.log('response : ', response);
-        console.log('recipe : ', recipe);
+        console.log('recipes : ', recipes);
         const text = response.data['data'];
         const wakati = response.data['wakati'];
-        setRecipe((recipe) => ({
-          ...recipe,
+        setRecipes((recipes) => ({
+          ...recipes,
           nerText: text,
           wakatiText: wakati,
           annotatedRecipe: generateColorAnnotation(text),
           loading: false
         }));
-        console.log('recipe.loading : ', recipe.loading);
+        console.log('recipe.loading : ', recipes.loading);
       });
 
     return ;
@@ -455,11 +488,11 @@ export const RecipeForm = ({
   const fetchTimeData = () => {
     let actionCount;
     let time;
-    let ner = recipe.nerText;
-    let wakati = recipe.wakatiText;
-    console.log('actionTimeParams : ', recipe.actionTimeParams);
+    let ner = recipes.nerText;
+    let wakati = recipes.wakatiText;
+    console.log('actionTimeParams : ', recipes.actionTimeParams);
 
-    if (recipe.actionTimeParams === undefined) {
+    if (recipes.actionTimeParams === undefined) {
       console.log('undefined fetchTimeData');
       axios.post(POST_URL + '/time', {
         method: 'POST',
@@ -471,8 +504,8 @@ export const RecipeForm = ({
       })
         .then((response) => {
           console.log('response : ', response);
-          console.log('recipe : ', recipe);
-          console.log('actionTimeParams : ', recipe.actionTimeParams);
+          console.log('recipes : ', recipes);
+          console.log('actionTimeParams : ', recipes.actionTimeParams);
           actionCount = response.data['count'];
           time = response.data['time'];
           // actionTime = response.data['actiontime']
@@ -482,7 +515,7 @@ export const RecipeForm = ({
     }
     else {
       console.log('not undefined timeFetchData');
-      // time = recipe.recipeTimeData.reduce((t, x) => t + x.time, 0);
+      // time = recipes.recipeTimeData.reduce((t, x) => t + x.time, 0);
       axios.post(POST_URL + '/time', {
         method: 'POST',
         data: [ner, wakati],
@@ -493,15 +526,15 @@ export const RecipeForm = ({
       })
         .then((response) => {
           console.log('response : ', response);
-          console.log('recipe : ', recipe);
-          console.log('actionTimeParams : ', recipe.actionTimeParams);
+          console.log('recipe : ', recipes);
+          console.log('actionTimeParams : ', recipes.actionTimeParams);
           actionCount = response.data['count'];
           time = response.data['time'];
           recipeTimeDataMart(response, actionCount, time);
         });
     }
 
-    console.log('recipe.nerText : ', recipe.nerText);
+    console.log('recipe.nerText : ', recipes.nerText);
     console.log('recipeTimeData : ', recipeTimeData);
     console.log('actionTimeParams : ', actionTimeParams);
   };
@@ -534,15 +567,15 @@ export const RecipeForm = ({
 
   const recipeTimeDataMart = (response, actionCount, time) => {
     let computeActionTimeMap;
-    console.log('recipe.actionTimeParams : ', recipe.actionTimeParams);
+    console.log('recipes.actionTimeParams : ', recipes.actionTimeParams);
     console.log('recipTimeDataMart/actionCount : ', actionCount);
-    if (recipe.actionTimeParams === undefined) {
+    if (recipes.actionTimeParams === undefined) {
       console.log('undefined : ', response.data['params']);
       computeActionTimeMap = generateActionTimeMap(actionCount, response.data['params']);
       console.log('undefined computeActionTime : ', computeActionTimeMap);
 
-      setRecipe((recipe) => ({
-        ...recipe,
+      setRecipes((recipes) => ({
+        ...recipes,
         recipeTimeData: computeActionTimeMap,
         expectedTime: time,
         actionCount: actionCount,
@@ -555,21 +588,21 @@ export const RecipeForm = ({
       return ;
     }
     else {
-      console.log('not undefined : ', recipe.actionTimeParams);
-      computeActionTimeMap = generateActionTimeMap(actionCount, recipe.actionTimeParams);
-      console.log('not undefinde : ', recipe.actionTimeParams);
+      console.log('not undefined : ', recipes.actionTimeParams);
+      computeActionTimeMap = generateActionTimeMap(actionCount, recipes.actionTimeParams);
+      console.log('not undefinde : ', recipes.actionTimeParams);
       console.log('not undefined computeActionTime : ', computeActionTimeMap);
       let newActionTime = computeActionTimeMap.reduce((t, x) => t + x.time, 0);
       let newExpectedTime = newActionTime + response.data['recipetime'];
 
-      setRecipe((recipe) => ({
-        ...recipe,
+      setRecipes((recipes) => ({
+        ...recipes,
         recipeTimeData: computeActionTimeMap,
         expectedTime: newExpectedTime,
         actionCount: actionCount,
         actionTime: newActionTime,
         recipeTime: response.data['recipetime'],
-        actionTimeParams: recipe.actionTimeParams,
+        actionTimeParams: recipes.actionTimeParams,
         actionTimeInRecipe: computeActionTimeMap
       }));
 
@@ -578,8 +611,8 @@ export const RecipeForm = ({
   };
 
   const fetchRecipeLevel = () => {
-    let data = recipe.ingredientsList;
-    let wakati = recipe.wakatiText;
+    let data = recipes.ingredients;
+    let wakati = recipes.wakatiText;
     
     axios.post(POST_URL + '/level', {
       method: 'POST',
@@ -591,15 +624,15 @@ export const RecipeForm = ({
     })
       .then((response) => {
         console.log('fetchRecipeLevel/response : ', response);
-        console.log('retchRecipeLevel/recipe : ', recipe);
+        console.log('retchRecipeLevel/recipes : ', recipes);
         console.log('retchRecipeLevel/data: ', response.data['data']);
-        console.log('fetchRecipeLevel/recipe.refferenceRecipeParams : ', recipe.refferenceRecipeParams);
+        console.log('fetchRecipeLevel/recipes.refferenceRecipeParams : ', recipes.refferenceRecipeParams);
         let refdata;
-        if (recipe.refferenceRecipeParams === undefined) {
+        if (recipes.refferenceRecipeParams === undefined) {
           refdata = [0, 0, 0, 0, 0];
         }
         else {
-          refdata = recipe.refferenceRecipeParams;
+          refdata = recipes.refferenceRecipeParams;
         }
         console.log('fetchRecipeLevel/refdata : ', refdata);
         let allData = response.data['data'];
@@ -613,8 +646,8 @@ export const RecipeForm = ({
         dataMart.splice(5, 1);
         console.log('fetchRecipeLevel/dataMart : ', dataMart);
 
-        setRecipe((recipe) => ({
-          ...recipe,
+        setRecipes((recipes) => ({
+          ...recipes,
           recipeLevelData: allData,
           radarChartDataMart: dataMart
         }));
@@ -626,10 +659,10 @@ export const RecipeForm = ({
   // read and output //
   // /////////////// //
   const readJson = () => {
-    console.log('recipe : ', recipe);
+    console.log('recipes : ', recipes);
     axios.post(POST_URL + '/read', {
       method: 'POST',
-      data: recipe,
+      data: recipes,
       headers: {
         'Content-Types': 'application/json',
         'Access-Control-Allow-Origin': '*'
@@ -637,10 +670,10 @@ export const RecipeForm = ({
     })
       .then((response) => {
         console.log('response : ', response);
-        setRecipe((recipe) => ({
-          ...recipe,
-          ingredientsList: response.data.data['ingredientsList'],
-          originalRecipe: response.data.data['originalRecipe'],
+        setRecipes((recipes) => ({
+          ...recipes,
+          ingredients: response.data.data['ingredients'],
+          recipe: response.data.data['recipe'],
           annotatedRecipe: response.data.data['annotatedRecipe'],
           recipeTimeData: response.data.data['recipeTimeData'],
           recipeLevelData: response.data.data['recipeLevelData'],
@@ -654,32 +687,32 @@ export const RecipeForm = ({
           actionTimeInRecipe: response.data.data['actionTimeInRecipe'],
           actionTime: response.data.data['actionTime'],
           recipeTime: response.data.data['recipeTime'],
-          recipeTitle: response.data.data['recipeTitle'],
-          recipeUrl: response.data.data['recipeUrl']
+          title: response.data.data['title'],
+          url: response.data.data['url']
         }));
-        console.log('recipe : ', recipe);
+        console.log('recipes : ', recipes);
       });
 
     return ;
   };
 
   const outputJson = () => {
-    console.log('recipe : ', recipe);
+    console.log('recipes : ', recipes);
     axios.post(POST_URL + '/output', {
       method: 'POST',
-      data: recipe,
+      data: recipes,
       headers: {
         'Content-Types': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
-    })
-  }
+    });
+  };
 
   const importData = () => {
-    console.log('recipe : ', recipe);
+    console.log('recipes : ', recipes);
     axios.post(POST_URL + '/import', {
       method: 'POST',
-      data: recipe,
+      data: recipes,
       headers: {
         'Content-Types': 'application/json',
         'Access-Control-Allow-Origin': '*'
@@ -688,12 +721,12 @@ export const RecipeForm = ({
       .then((response) => {
         console.log('response : ', response);
         console.log('response.data.data["ingredients"] : ', response.data.data['ingredients']);
-        setRecipe((recipe) => ({
-          ...recipe,
-          ingredientsList: objectToIngredientsText(response.data.data['ingredients']),
-          originalRecipe: response.data.data['recipe'],
-          recipeUrl: response.data.data['url'],
-          recipeTitle: response.data.data['title']
+        setRecipes((recipes) => ({
+          ...recipes,
+          ingredients: objectToIngredientsText(response.data.data['ingredients']),
+          recipe: response.data.data['recipe'],
+          url: response.data.data['url'],
+          title: response.data.data['title']
         }));
       });
   }
@@ -719,7 +752,7 @@ export const RecipeForm = ({
   const displayDataList = () => {
     axios.post(POST_URL + '/select', {
       method: 'POST',
-      data: recipe,
+      data: recipes,
       headers: {
         'Content-Types': 'application/json',
         'Access-Control-Allow-Origin': '*'
@@ -727,11 +760,30 @@ export const RecipeForm = ({
     })
       .then((response) => {
         console.log('response : ', response);
-        setRecipe((recipe) => ({
-          ...recipe,
+        setRecipes((recipes) => ({
+          ...recipes,
           dataList: response.data['data']
         }));
-      })
+      });
+  };
+
+  const displayDataListForUseEffect = () => {
+    axios.post(POST_URL + '/select', {
+      method: 'POST',
+      data: recipes,
+      headers: {
+        'Content-Types': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+      .then((response) => {
+        console.log('response : ', response);
+	console.log('response.data["data"] : ', response.data['data']);
+        setRecipes((recipes) => ({
+          ...recipes,
+          selectedRecipeDataTypes: response.data['data']
+        }));
+      });
   };
 
   // ///////////////////////// //
@@ -740,7 +792,7 @@ export const RecipeForm = ({
   const fetchFlowGraphData = () => {
     axios.post(POST_URL + '/flowgraph', {
       method: 'POST',
-      data: recipe,
+      data: recipes,
       headers: {
         'Content-Types': 'application/json',
         'Access-Control-Allow-Origin': '*'
@@ -748,11 +800,11 @@ export const RecipeForm = ({
     })
       .then((response) => {
         console.log('response : ', response);
-        setRecipe((recipe) => ({
-          ...recipe,
+        setRecipes((recipes) => ({
+          ...recipes,
           flowGraphData: response.data['data']
         }));
-      })
+      });
   };
 
   // ///////// //
@@ -774,34 +826,39 @@ export const RecipeForm = ({
   });
 
   const selectRefferenceRecipeName = Object.keys(nameRecipe[0]).map((key) => {
-    return <option value={key}>{key}</option>
+    return <option value={key}>{key}</option>;
   });
 
-  const recipeDataType = [
-    'orangepage', 'betterhome'
-  ];
+  // duplicated
+  // const recipeDataType = [
+  //   'orangepage', 'betterhome'
+  // ];
 
-  const selectRecipeDataType = recipeDataType.map((key) => {
-    return <option value={key}>{key}</option>
-  });
+  const selectRecipeDataType = () => {
+    if (recipes.selectedRecipeDataType !== undefined) {
+      console.log('recipe.selectedRecipeDataTypes : ', recipes.selectedRecipeDataTypes);
+      console.log('recipes.selectedRecipeDataType : ', recipes.selectedRecipeDataType);
+      recipes.selectedRecipeDataTypes.map((key, index) => {
+	return <option value={key}>{key}</option>;
+      });
+    }
+  };
 
   const displayRecipeSource = () => {
-    if (recipe.recipeUrl.indexOf('orangepage') != -1) {
-      return '出典: オレンジページ';
-    }
-    if (recipe.recipeUrl.indexOf('bh-recipe') != -1) {
-      return '出典: ベターホーム'
+    console.log('recipes.recipeDataType : ', recipes.selectedRecipeDataType);
+    if (recipes.selectedRecipeDataType !== undefined) {
+      return `出典: ${recipes.selectedRecipeDataType}`;
     }
     return '出典: 不明';
-  }
+  };
 
   const attachActionParams = () => {
     console.log('attachActionParams');
     let params = recipe.actionTimeParams;
     console.log('orgParams : ', params);
-    let action = recipe.attachAction;
+    let action = recipes.attachAction;
     console.log('action : ', action);
-    let time = recipe.attachTime;
+    let time = recipes.attachTime;
     console.log('time : ', time);
     let attachParams = {};
     attachParams.action = action;
@@ -809,8 +866,8 @@ export const RecipeForm = ({
     params.push(attachParams);
     console.log('newParams : ', params);
 
-    setRecipe((recipe) => ({
-      ...recipe,
+    setRecipes((recipes) => ({
+      ...recipes,
       actionTimeParams: params
     }));
 
@@ -821,18 +878,18 @@ export const RecipeForm = ({
   };
 
   const outputAttachActionParams = () => {
-    console.log('recipe : ', recipe);
+    console.log('recipes : ', recipes);
     axios.post(POST_URL + '/attachac', {
       method: 'POST',
-      data: recipe.actionTimeParams,
+      data: recipes.actionTimeParams,
       headers: {
         'Content-Types': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
-    })
+    });
 
     return ;
-  }
+  };
 
   const resetActionParams = () => {
     axios.post(POST_URL + '/resetparams', {
@@ -841,17 +898,17 @@ export const RecipeForm = ({
         'Content-Types': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
-    })
+    });
   };
 
   const testActionTimeParams = () => {
-    console.log('test actionTimeParams : ', recipe.actionTimeParams);
-    console.log('test : ', recipe.recipeTimeData);
-    let data = recipe.recipeTimeData;
+    console.log('test actionTimeParams : ', recipes.actionTimeParams);
+    console.log('test : ', recipes.recipeTimeData);
+    let data = recipes.recipeTimeData;
     data.push({'action': 'action', 'time': 10});
     console.log('data : ', data);
-    setRecipe((recipe) => ({
-      ...recipe,
+    setRecipes((recipes) => ({
+      ...recipes,
       recipeTimeData: data
     }));
   };
@@ -869,51 +926,37 @@ export const RecipeForm = ({
         <button onClick={testActionTimeParams}>テスト</button>
       </div>
       <div className="fileButton">
-        <button onClick={displayDataList}>選択</button>
-        <form id="selectedData">
-            <select
-              name="selectedData"
-              value={recipe.selectedData}
-              id="selectedData"
-              onChange={handleChange}
-            >
-              {recipe.dataList === undefined
-               ? null
-               : recipe.dataList.map((data) => (
-                 <option key={data}>{data}</option>
-               ))
-              }
-            </select>
-        </form>
-        <button onClick={readJson}>読込</button>
+      <button onClick={importData}>読込</button>
         <button onClick={outputJson}>保存</button>
       </div>
       <div  className="importData">
         <form id="selectedRecipeDataType">
           <select
             name="selectedRecipeDataType"
-            value={recipe.selectedRecipeDataType}
+            value={recipes.selectedRecipeDataType}
             id="selectedRecipeDataType"
             onChange={handleChange}
           >
-            {selectRecipeDataType}
+            {recipes.selectedRecipeDataTypes === undefined
+             ? null
+             : recipes.selectedRecipeDataTypes.map((key, index) => (
+               <option value={key}>{key}</option>
+	     ))}
           </select>
           <select
             name="selectedRecipeDataTypeFile"
-            value={recipe.selectedRecipeDataTypeFile}
+            value={recipes.selectedRecipeDataTypeFile}
             id="selectedRecipeDataTypeFile"
             onChange={handleChange}
           >
-            {recipe.selectedRecipeDataTypeFiles === undefined
+            {recipes.selectedRecipeDataTypeFiles === undefined
              ? null
-             : recipe.selectedRecipeDataTypeFiles.map((data) => (
-               <option key={data}>{data}</option>
-             ))
+             : recipes.selectedRecipeDataTypeFiles.map((key, index) => (
+		 <option key={key}>{key}</option>
+	     ))
             }
           </select>
-          
         </form>
-        <button onClick={importData}>インポート</button>
       </div>
       <div className="recipeName">
         <form
@@ -923,9 +966,9 @@ export const RecipeForm = ({
             名前
           </label>
           <input
-            name="recipeTitle"
-            value={recipe.recipeTitle}
-            id="recipeTitle"
+            name="title"
+            value={recipes.title}
+            id="title"
             onChange={handleChange}
             type="text"
             size="40"
@@ -934,30 +977,46 @@ export const RecipeForm = ({
             URL
           </label>
           <input
-            name="recipeUrl"
-            value={recipe.recipeUrl}
-            id="recipeUrl"
+            name="url"
+            value={recipes.url}
+            id="url"
             onChange={handleChange}
             type="text"
             size="40"
           />
+          <label>
+            出典
+          </label>
+          <input 
+            type="text"
+            name="sourceRefference" 
+            list="sourceRefferenceList"
+            onChange={handleChange}
+          />
+            <datalist id="sourceRefferenceList">
+              { recipes.selectedRecipeDataType === undefined
+               ? null
+	       : selectRecipeDataType
+	      }
+
+            </datalist>
         </form>
         <h2>
-          {recipe.recipeUrl === undefined
+          {recipes.url === undefined
            ? null
            : displayRecipeSource()
           }
         </h2>
       </div>
-      <form id="recipe" onSubmit={() => onSubmit(recipe)}>
+      <form id="recipes" onSubmit={() => onSubmit(recipes)}>
         <div className="formTable">
           <div className="recipeLabels">
-            <p><label htmlFor="ingredientsList">材料</label></p>
+            <p><label htmlFor="ingredients">材料</label></p>
             <textarea
-              name="ingredientsList"
+              name="ingredients"
               type="text"
-              value={recipe.ingredientsList}
-              id="ingredientsList"
+              value={recipes.ingredients}
+              id="ingredients"
               onChange={handleChange}
               className="recipeForms"
               rows="20"
@@ -965,12 +1024,12 @@ export const RecipeForm = ({
             />
           </div>
           <div className="recipeLabels">
-            <p><label htmlFor="originalRecipe">作り方</label></p>
+            <p><label htmlFor="recipe">作り方</label></p>
             <textarea
-              name="originalRecipe"
+              name="recipe"
               type="text"
-              value={recipe.originalRecipe}
-              id="originalRecipe"
+              value={recipes.recipe}
+              id="recipe"
               onChange={handleChange}
               className="recipeForms"
               rows="20"
@@ -985,13 +1044,13 @@ export const RecipeForm = ({
           <label>Action 時間変更</label>
           <select
             name="selectedAction"
-            value={recipe.selectedAction}
+            value={recipes.selectedAction}
             id="selectedAction"
             onChange={handleChange}
           >
-            {recipe.actionTimeParams === undefined
+            {recipes.actionTimeParams === undefined
              ? null
-             : recipe.actionTimeParams.map((param) => (
+             : recipes.actionTimeParams.map((param) => (
                <option key={param}>{param.action}</option>
              ))
             }
@@ -999,7 +1058,7 @@ export const RecipeForm = ({
 
           <input
             name="selectedActionTime"
-            value={recipe.selectedActionTime}
+            value={recipes.selectedActionTime}
             id="selectedActionTime"
             onChange={handleChange}
           />
@@ -1008,14 +1067,14 @@ export const RecipeForm = ({
           <label>Action 追加</label>
           <input
             name="attachAction"
-            value={recipe.attachAction}
+            value={recipes.attachAction}
             id="attachAction"
             onChange={handleChange}
           />
           <label>時間 追加</label>
           <input
             name="attachTime"
-            value={recipe.attachTime}
+            value={recipes.attachTime}
             id="attachTime"
             onChange={handleChange}
           />
@@ -1025,25 +1084,25 @@ export const RecipeForm = ({
 
         <div className="chartCell">
           <div className="expectedTime">
-            調理推定時間<span className="numberOfTime">{recipe.expectedTime}</span>分
+            調理推定時間<span className="numberOfTime">{recipes.expectedTime}</span>分
           </div>
           <div className="expectedTime">
-            AC時間<span className="numberOfTime">{recipe.actionTime}</span>分
+            AC時間<span className="numberOfTime">{recipes.actionTime}</span>分
           </div>
           <div className="expectedTime">
-            レシピ時間<span className="numberOfTime">{recipe.recipeTime}</span>分
+            レシピ時間<span className="numberOfTime">{recipes.recipeTime}</span>分
           </div>
           <BarChartWrapper
-            data={recipe.recipeTimeData}
+            data={recipes.recipeTimeData}
           />
           <BarChartWrapper
-            data={recipe.actionTimeParams}
+            data={recipes.actionTimeParams}
           />
 
           <form id="refferenceRecipe">
             <select
               name="refferenceRecipe"
-              value={recipe.refferenceRecipe}
+              value={recipes.refferenceRecipe}
               id="refferenceRecipe"
               onChange={handleChange}
             >
@@ -1054,17 +1113,17 @@ export const RecipeForm = ({
             </select>
           </form>
 
-          <h2>青: {recipeName[0][recipe.refferenceRecipeID]} レベル: {recipe.refferenceRecipeLevel}</h2>
-          <h2>赤: {recipe.recipeTitle === undefined ? null : recipe.recipeTitle} レベル: {recipe.targetRecipeLevel}</h2>
+          <h2>青: {recipeName[0][recipes.refferenceRecipeID]} レベル: {recipes.refferenceRecipeLevel}</h2>
+          <h2>赤: {recipes.title === undefined ? null : recipes.title} レベル: {recipes.targetRecipeLevel}</h2>
 
           <RadarChartWrapper
-            data={recipe.radarChartDataMart}
+            data={recipes.radarChartDataMart}
             recipename={sampleRecipeName}
           />
           <form id="selectedParams">
               <select
                 name="selectedParams"
-                value={recipe.selectedParams}
+                value={recipes.selectedParams}
                 onChange={handleChange}
               >
                 {selectTargetVerticalBarChart === undefined
@@ -1074,27 +1133,32 @@ export const RecipeForm = ({
               </select>
           </form>
           <VerticalBarChartWrapper
-            data={recipe.verticalBarChartDataMart}
-            target={recipe.verticalBarChartTarget}
-            refferenceValue={recipe.refferenceCurrentRecipeParams}
-            refferenceName={recipe.recipeTitle === undefined ? "recipename" : recipe.recipeTitle}
+            data={recipes.verticalBarChartDataMart}
+            target={recipes.verticalBarChartTarget}
+            refferenceValue={recipes.refferenceCurrentRecipeParams}
+    refferenceName={recipes.title === undefined ? "recipename" : recipes.title}
           />
         </div>
 
         <div className="flowGraph">
-          {recipe.flowGraphData === undefined
+          {recipes.flowGraphData === undefined
            ? null
-           : <FlowgraphWrapper data={recipe.flowGraphData}/>
+           : <FlowgraphWrapper data={recipes.flowGraphData}/>
           }
         </div>
 
         <div className="recipeForms">
-          {recipe.loading
+          {recipes.loading
            ? <Loader type="Watch"/>
-           : <div id="annotatedRecipe" dangerouslySetInnerHTML={{__html: recipe.annotatedRecipe}}/>
+           : <div id="annotatedRecipe" dangerouslySetInnerHTML={{__html: recipes.annotatedRecipe}}/>
           }
         </div>
       </div>
     </div>
   );
+};
+
+RecipeForm.defaultProps = {
+  selectedRecipeDataType: 'betterhome',
+  selectedRecipeDataTypeFile: 'ミートパイ.json'
 };
