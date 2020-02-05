@@ -15,7 +15,7 @@ import {
   weekcookOrgRecipeData
 } from './sampleData';
  
-import './RecipeForm.css'
+import './RecipeForm.css';
 
 // const POST_URL = 'http://localhost:5000';
 // const POST_URL = 'https://sampleweekcookdatapotal.azurewebsites.net';
@@ -31,6 +31,7 @@ export const RecipeForm = ({
   recipeLevelData,
   nerText,
   wakatiText,
+  labeledTime,
   expectedTime,
   actionTimeParams,
   selectedAction,
@@ -73,6 +74,7 @@ export const RecipeForm = ({
     nerText,
     wakatiText,
     expectedTime,
+    labeledTime,
     actionTimeParams,
     selectedAction,
     selectedActionTime,
@@ -726,10 +728,15 @@ export const RecipeForm = ({
           ingredients: objectToIngredientsText(response.data.data['ingredients']),
           recipe: response.data.data['recipe'],
           url: response.data.data['url'],
-          title: response.data.data['title']
+          title: response.data.data['title'],
+	  labeledTime: response.data.data['time'],
+	  expectedTime: '',
+	  actionTime: '',
+	  recipeTime: '',
+	  annotatedRecipe: ''
         }));
       });
-  }
+  };
 
   const objectToIngredientsText = (ingredientsObject) => {
     let outputText = '';
@@ -1083,6 +1090,9 @@ export const RecipeForm = ({
         <button onClick={resetActionParams}>追加したActionをリセット</button>
 
         <div className="chartCell">
+          <div className="expectedTime">
+            正解時間<span className="numberOfTime">{recipes.labeledTime}</span>
+          </div>
           <div className="expectedTime">
             調理推定時間<span className="numberOfTime">{recipes.expectedTime}</span>分
           </div>
